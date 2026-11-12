@@ -1,0 +1,296 @@
+{
+  "info": {
+    "name": "Productos API - Pruebas",
+    "description": "Coleccion de pruebas funcionales para la API REST de productos. Ejecuta los requests en orden: crea un producto, lo consulta, lo actualiza, lo elimina y valida los casos de error.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "productoId",
+      "value": "1"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health check",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('Aplicacion disponible', () => pm.expect(pm.response.json().status).to.eql('UP'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/actuator/health"
+      }
+    },
+    {
+      "name": "Crear producto",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 201', () => pm.response.to.have.status(201));",
+              "pm.test('Responde JSON', () => pm.response.to.be.json);",
+              "pm.test('Incluye cabecera Location', () => pm.response.to.have.header('Location'));",
+              "const json = pm.response.json();",
+              "pm.test('Tiene id', () => pm.expect(json.id).to.exist);",
+              "pm.test('Nombre correcto', () => pm.expect(json.nombre).to.eql('Laptop'));",
+              "pm.test('Precio correcto', () => pm.expect(json.precio).to.eql(2500000.00));",
+              "pm.test('Stock correcto', () => pm.expect(json.stock).to.eql(10));",
+              "pm.collectionVariables.set('productoId', json.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Laptop\",\n  \"precio\": 2500000.00,\n  \"stock\": 10\n}"
+        },
+        "url": "{{baseUrl}}/api/productos"
+      }
+    },
+    {
+      "name": "Listar productos",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "const json = pm.response.json();",
+              "pm.test('Es un arreglo', () => pm.expect(json).to.be.an('array'));",
+              "pm.test('Incluye el producto creado', () => {",
+              "  const id = Number(pm.collectionVariables.get('productoId'));",
+              "  pm.expect(json.some(producto => producto.id === id)).to.be.true;",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/productos"
+      }
+    },
+    {
+      "name": "Obtener producto por id",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('Id coincide', () => pm.expect(pm.response.json().id).to.eql(Number(pm.collectionVariables.get('productoId'))));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/productos/{{productoId}}"
+      }
+    },
+    {
+      "name": "Actualizar producto",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "const json = pm.response.json();",
+              "pm.test('Nombre actualizado', () => pm.expect(json.nombre).to.eql('Laptop Gamer'));",
+              "pm.test('Precio actualizado', () => pm.expect(json.precio).to.eql(2300000.00));",
+              "pm.test('Stock actualizado', () => pm.expect(json.stock).to.eql(8));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Laptop Gamer\",\n  \"precio\": 2300000.00,\n  \"stock\": 8\n}"
+        },
+        "url": "{{baseUrl}}/api/productos/{{productoId}}"
+      }
+    },
+    {
+      "name": "Obtener producto actualizado",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('Persistio la actualizacion', () => pm.expect(pm.response.json().nombre).to.eql('Laptop Gamer'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/productos/{{productoId}}"
+      }
+    },
+    {
+      "name": "Eliminar producto",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 204', () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/productos/{{productoId}}"
+      }
+    },
+    {
+      "name": "Obtener producto eliminado (404)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 404', () => pm.response.to.have.status(404));",
+              "pm.test('Titulo del error', () => pm.expect(pm.response.json().title).to.eql('Producto no encontrado'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/productos/{{productoId}}"
+      }
+    },
+    {
+      "name": "Crear producto invalido (400)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 400', () => pm.response.to.have.status(400));",
+              "const json = pm.response.json();",
+              "pm.test('Titulo del error', () => pm.expect(json.title).to.eql('Error de validacion'));",
+              "pm.test('Error en nombre', () => pm.expect(json.errors.nombre).to.exist);",
+              "pm.test('Error en precio', () => pm.expect(json.errors.precio).to.exist);",
+              "pm.test('Error en stock', () => pm.expect(json.errors.stock).to.exist);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"   \",\n  \"precio\": -1,\n  \"stock\": -5\n}"
+        },
+        "url": "{{baseUrl}}/api/productos"
+      }
+    },
+    {
+      "name": "Crear producto con JSON malformado (400)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 400', () => pm.response.to.have.status(400));",
+              "pm.test('Titulo del error', () => pm.expect(pm.response.json().title).to.eql('Solicitud mal formada'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"nombre\": "
+        },
+        "url": "{{baseUrl}}/api/productos"
+      }
+    },
+    {
+      "name": "Actualizar producto inexistente (404)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 404', () => pm.response.to.have.status(404));",
+              "pm.test('Titulo del error', () => pm.expect(pm.response.json().title).to.eql('Producto no encontrado'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Producto inexistente\",\n  \"precio\": 100.00,\n  \"stock\": 1\n}"
+        },
+        "url": "{{baseUrl}}/api/productos/999999"
+      }
+    }
+  ]
+}
