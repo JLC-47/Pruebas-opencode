@@ -1,0 +1,57 @@
+<section class="page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">Historial</span>
+      <h1>Mis compras</h1>
+      <p class="muted">Consulta tus pedidos y los productos adquiridos.</p>
+    </div>
+    <a class="btn btn-primary" routerLink="/productos">Comprar de nuevo</a>
+  </header>
+
+  @if (compraConfirmada()) {
+    <div class="alert alert-success">
+      Compra #{{ compraConfirmada() }} confirmada. Gracias por tu pedido.
+    </div>
+  }
+
+  @if (error()) {
+    <div class="alert alert-error">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="state-box">Cargando compras...</div>
+  } @else if (compras().length === 0) {
+    <div class="state-box">
+      <strong>Aun no tienes compras registradas.</strong>
+      <span>Cuando finalices un pedido aparecera en esta seccion.</span>
+      <a class="btn btn-primary" routerLink="/productos">Explorar catalogo</a>
+    </div>
+  } @else {
+    <div class="order-list">
+      @for (compra of compras(); track compra.id) {
+        <article class="order-card">
+          <header>
+            <div>
+              <span class="order-number">Pedido #{{ compra.id }}</span>
+              <span class="muted">{{ compra.fecha | date: 'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+            <div class="order-total">
+              <span class="muted">{{ unidades(compra.items) }} unidad(es)</span>
+              <strong>{{ compra.total | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
+            </div>
+          </header>
+
+          <ul>
+            @for (item of compra.items; track item.productoId) {
+              <li>
+                <span class="item-name">{{ item.productoNombre }}</span>
+                <span class="muted">x{{ item.cantidad }}</span>
+                <span>{{ item.subtotal | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</span>
+              </li>
+            }
+          </ul>
+        </article>
+      }
+    </div>
+  }
+</section>

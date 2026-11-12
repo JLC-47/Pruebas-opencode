@@ -1,0 +1,75 @@
+.alert-success {
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.order-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.order-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.order-card header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  background: #f8fafc;
+  padding: 1rem 1.25rem;
+}
+
+.order-card header div {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.order-number {
+  font-weight: 700;
+}
+
+.order-total {
+  text-align: right;
+}
+
+.order-total strong {
+  font-size: 1.05rem;
+}
+
+.order-card ul {
+  display: grid;
+  gap: 0.65rem;
+  list-style: none;
+  margin: 0;
+  padding: 1.1rem 1.25rem;
+}
+
+.order-card li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 1rem;
+  align-items: center;
+  border-bottom: 1px dashed var(--color-border);
+  padding-bottom: 0.65rem;
+}
+
+.order-card li:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.item-name {
+  font-weight: 600;
+}
+
+.state-box .btn {
+  margin-top: 0.75rem;
+}

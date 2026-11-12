@@ -22,6 +22,16 @@ public record ProductoRequest(
 
         @NotNull(message = "El stock es obligatorio")
         @PositiveOrZero(message = "El stock no puede ser negativo")
-        Integer stock
+        Integer stock,
+
+        @Size(max = 60, message = "La categoria no puede superar los 60 caracteres")
+        String categoria,
+
+        @Size(max = 300, message = "La descripcion no puede superar los 300 caracteres")
+        String descripcion
 ) {
+
+    public ProductoRequest(String nombre, BigDecimal precio, Integer stock) {
+        this(nombre, precio, stock, null, null);
+    }
 }

@@ -1,0 +1,14 @@
+target/
+src/main/resources/static/
+src/main/resources/frontend/node_modules/
+src/main/resources/frontend/.angular/
+src/main/resources/frontend/dist/
+.git/
+.gitignore
+.idea/
+.vscode/
+*.iml
+capturas/
+postman/
+README.md
+docker-compose.yml

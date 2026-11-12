@@ -16,3 +16,17 @@ management:
     web:
       exposure:
         include: health
+
+app:
+  jwt:
+    secret: Y2xhdmUtc3VwZXItc2VndXJhLXBhcmEtZGVzYXJyb2xsby1sb2NhbC0yMDI2LXByb2R1Y3Rvcy1hcGk=
+    access-token-minutes: 20
+    refresh-token-days: 7
+  seed:
+    enabled: true
+    admin:
+      username: admin
+      password: admin123
+    user:
+      username: user
+      password: user123

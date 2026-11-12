@@ -1,0 +1,92 @@
+<section class="login-page">
+  <div class="login-card">
+    <aside class="login-brand">
+      <span class="brand-mark">P</span>
+      <span class="eyebrow">Productos API</span>
+      <h1>Compra facil, administra rapido.</h1>
+      <p class="brand-copy">
+        Un catalogo moderno con carrito, checkout e historial de compras para tus usuarios.
+      </p>
+
+      <ul class="features">
+        <li>Catalogo actualizado en tiempo real</li>
+        <li>Carrito persistente y checkout seguro</li>
+        <li>Historial de pedidos por usuario</li>
+      </ul>
+
+      <div class="demo-users">
+        <span class="demo-title">Usuarios de demostracion</span>
+        <div class="demo-user">
+          <div>
+            <strong>Administrador</strong>
+            <span>Gestiona el catalogo y compra.</span>
+          </div>
+          <button class="btn btn-sm" type="button" (click)="usarCredenciales('admin', 'admin123')">
+            admin / admin123
+          </button>
+        </div>
+        <div class="demo-user">
+          <div>
+            <strong>Usuario</strong>
+            <span>Compra y consulta sus pedidos.</span>
+          </div>
+          <button class="btn btn-sm" type="button" (click)="usarCredenciales('user', 'user123')">
+            user / user123
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <div class="login-form-panel">
+      <header class="form-header">
+        <div>
+          <span class="eyebrow">Bienvenido</span>
+          <h2>Iniciar sesion</h2>
+        </div>
+        <a class="btn btn-sm" routerLink="/productos">Volver</a>
+      </header>
+
+      @if (error()) {
+        <div class="alert alert-error">{{ error() }}</div>
+      }
+
+      <form class="form" [formGroup]="form" (ngSubmit)="iniciarSesion()" novalidate>
+        <label class="field">
+          <span>Usuario</span>
+          <input
+            class="input"
+            type="text"
+            formControlName="username"
+            autocomplete="username"
+            placeholder="admin"
+          />
+          @if (form.controls.username.touched && form.controls.username.invalid) {
+            <small class="error-text">El usuario es obligatorio.</small>
+          }
+        </label>
+
+        <label class="field">
+          <span>Contrasena</span>
+          <input
+            class="input"
+            type="password"
+            formControlName="password"
+            autocomplete="current-password"
+            placeholder="Tu contrasena"
+          />
+          @if (form.controls.password.touched && form.controls.password.invalid) {
+            <small class="error-text">La contrasena es obligatoria.</small>
+          }
+        </label>
+
+        <button class="btn btn-primary login-submit" type="submit" [disabled]="cargando()">
+          {{ cargando() ? 'Ingresando...' : 'Ingresar' }}
+        </button>
+      </form>
+
+      <p class="muted login-note">
+        Usa una cuenta de demostracion para explorar el flujo completo de compra.
+      </p>
+    </div>
+  </div>
+</section>

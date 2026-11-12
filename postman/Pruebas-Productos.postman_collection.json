@@ -1,8 +1,18 @@
 {
   "info": {
     "name": "Productos API - Pruebas",
-    "description": "Coleccion de pruebas funcionales para la API REST de productos. Ejecuta los requests en orden: crea un producto, lo consulta, lo actualiza, lo elimina y valida los casos de error.",
+    "description": "Coleccion de pruebas funcionales para la API REST de productos. Ejecuta los requests en orden: inicia sesion como admin, crea un producto, lo consulta, lo actualiza, lo elimina y valida los casos de error.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
   },
   "variable": [
     {
@@ -12,9 +22,54 @@
     {
       "key": "productoId",
       "value": "1"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "refreshToken",
+      "value": ""
     }
   ],
   "item": [
+    {
+      "name": "Login admin",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "const json = pm.response.json();",
+              "pm.test('Devuelve access token', () => pm.expect(json.accessToken).to.be.a('string'));",
+              "pm.test('Devuelve refresh token', () => pm.expect(json.refreshToken).to.be.a('string'));",
+              "pm.test('Rol admin', () => pm.expect(json.usuario.roles).to.include('ADMIN'));",
+              "pm.collectionVariables.set('accessToken', json.accessToken);",
+              "pm.collectionVariables.set('refreshToken', json.refreshToken);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+        },
+        "url": "{{baseUrl}}/api/auth/login"
+      }
+    },
     {
       "name": "Health check",
       "event": [
@@ -80,10 +135,14 @@
             "exec": [
               "pm.test('Status 200', () => pm.response.to.have.status(200));",
               "const json = pm.response.json();",
-              "pm.test('Es un arreglo', () => pm.expect(json).to.be.an('array'));",
+              "pm.test('Es una pagina', () => pm.expect(json.content).to.be.an('array'));",
+              "pm.test('Incluye metadatos de paginacion', () => {",
+              "  pm.expect(json).to.have.property('totalElements');",
+              "  pm.expect(json).to.have.property('totalPages');",
+              "});",
               "pm.test('Incluye el producto creado', () => {",
               "  const id = Number(pm.collectionVariables.get('productoId'));",
-              "  pm.expect(json.some(producto => producto.id === id)).to.be.true;",
+              "  pm.expect(json.content.some(producto => producto.id === id)).to.be.true;",
               "});"
             ]
           }
@@ -92,6 +151,74 @@
       "request": {
         "method": "GET",
         "url": "{{baseUrl}}/api/productos"
+      }
+    },
+    {
+      "name": "Listar con paginacion y orden",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "const json = pm.response.json();",
+              "pm.test('Aplica el tamano de pagina', () => pm.expect(json.size).to.eql(2));",
+              "pm.test('Incluye metadatos de paginacion', () => {",
+              "  pm.expect(json).to.have.property('totalElements');",
+              "  pm.expect(json).to.have.property('totalPages');",
+              "  pm.expect(json).to.have.property('first');",
+              "  pm.expect(json).to.have.property('last');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/productos?page=0&size=2&sort=nombre&direction=asc"
+      }
+    },
+    {
+      "name": "Buscar productos por nombre",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "const json = pm.response.json();",
+              "pm.test('Encuentra el producto creado', () => {",
+              "  const id = Number(pm.collectionVariables.get('productoId'));",
+              "  pm.expect(json.content.some(producto => producto.id === id)).to.be.true;",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/productos?nombre=lap&size=10"
+      }
+    },
+    {
+      "name": "Listar con parametros invalidos (400)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 400', () => pm.response.to.have.status(400));",
+              "pm.test('Titulo del error', () => pm.expect(pm.response.json().title).to.eql('Parametros invalidos'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/productos?size=0"
       }
     },
     {

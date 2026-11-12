@@ -1,0 +1,133 @@
+<section class="page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">Catalogo</span>
+      <h1>Productos</h1>
+      <p class="muted">{{ totalElements() }} producto(s) registrados</p>
+    </div>
+    @if (esAdmin()) {
+      <a class="btn btn-primary" routerLink="nuevo">+ Nuevo producto</a>
+    }
+  </header>
+
+  <div class="toolbar">
+    <input
+      class="input search"
+      type="search"
+      placeholder="Buscar por nombre..."
+      [value]="busqueda()"
+      (input)="onBusqueda($any($event.target).value)"
+    />
+
+    <div class="sort-group">
+      <span class="sort-label">Ordenar</span>
+      <button class="sort-chip" type="button" (click)="ordenar('nombre')">
+        Nombre <span>{{ indicador('nombre') }}</span>
+      </button>
+      <button class="sort-chip" type="button" (click)="ordenar('precio')">
+        Precio <span>{{ indicador('precio') }}</span>
+      </button>
+      <button class="sort-chip" type="button" (click)="ordenar('stock')">
+        Stock <span>{{ indicador('stock') }}</span>
+      </button>
+    </div>
+
+    <select
+      class="input select"
+      aria-label="Productos por pagina"
+      [value]="size()"
+      (change)="cambiarTamano($any($event.target).value)"
+    >
+      <option value="12">12 por pagina</option>
+      <option value="24">24 por pagina</option>
+      <option value="48">48 por pagina</option>
+    </select>
+  </div>
+
+  @if (aviso(); as mensaje) {
+    <div class="alert" [class.alert-error]="mensaje.error" [class.alert-success]="!mensaje.error">
+      {{ mensaje.texto }}
+    </div>
+  }
+
+  @if (error()) {
+    <div class="alert alert-error">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="state-box">Cargando productos...</div>
+  } @else if (productos().length === 0) {
+    <div class="state-box">
+      <strong>No hay productos para mostrar.</strong>
+      <span>Prueba con otra busqueda o crea un producto nuevo.</span>
+    </div>
+  } @else {
+    <div class="product-grid">
+      @for (producto of productos(); track producto.id) {
+        <article class="product-card">
+          <div [class]="'product-visual cat-' + categoriaSlug(producto)">
+            <span class="product-initial">{{ inicial(producto) }}</span>
+            <span class="product-category">{{ categoria(producto) }}</span>
+            <span
+              class="stock-pill"
+              [class.low]="producto.stock > 0 && producto.stock <= 5"
+              [class.out]="producto.stock <= 0"
+            >
+              {{ stockTexto(producto) }}
+            </span>
+          </div>
+
+          <div class="product-body">
+            <div class="product-title">
+              <h2>{{ producto.nombre }}</h2>
+              <span class="product-id">#{{ producto.id }}</span>
+            </div>
+            <p class="product-description">
+              {{ producto.descripcion || 'Sin descripcion disponible.' }}
+            </p>
+            <strong class="product-price">
+              {{ producto.precio | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}
+            </strong>
+
+            <div class="product-actions">
+              <button
+                class="btn btn-primary btn-sm"
+                type="button"
+                [disabled]="producto.stock <= 0"
+                (click)="agregar(producto)"
+              >
+                {{ producto.stock <= 0 ? 'Agotado' : 'Agregar al carrito' }}
+              </button>
+              @if (esAdmin()) {
+                <a class="btn btn-sm" [routerLink]="[producto.id, 'editar']">Editar</a>
+                <button class="btn btn-sm btn-danger" type="button" (click)="eliminar(producto)">
+                  Eliminar
+                </button>
+              }
+            </div>
+          </div>
+        </article>
+      }
+    </div>
+
+    <footer class="pagination">
+      <button
+        class="btn btn-sm"
+        type="button"
+        [disabled]="first()"
+        (click)="cambiarPagina(-1)"
+      >
+        Anterior
+      </button>
+      <span>Pagina {{ page() + 1 }} de {{ totalPages() || 1 }}</span>
+      <button
+        class="btn btn-sm"
+        type="button"
+        [disabled]="last()"
+        (click)="cambiarPagina(1)"
+      >
+        Siguiente
+      </button>
+    </footer>
+  }
+</section>

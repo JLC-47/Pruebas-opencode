@@ -1,0 +1,85 @@
+<section class="page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">Tu seleccion</span>
+      <h1>Carrito de compras</h1>
+      <p class="muted">Revisa cantidades y confirma tu pedido.</p>
+    </div>
+    <a class="btn" routerLink="/productos">Seguir comprando</a>
+  </header>
+
+  @if (error()) {
+    <div class="alert alert-error">{{ error() }}</div>
+  }
+
+  @if (cart.vacio()) {
+    <div class="state-box empty-cart">
+      <strong>Tu carrito esta vacio.</strong>
+      <span>Explora el catalogo y agrega productos para comenzar.</span>
+      <a class="btn btn-primary" routerLink="/productos">Ver productos</a>
+    </div>
+  } @else {
+    <div class="cart-layout">
+      <div class="cart-items">
+        @for (item of cart.items(); track item.producto.id) {
+          <article class="cart-item">
+            <div class="item-thumb">{{ inicial(item) }}</div>
+            <div class="item-info">
+              <span class="category">{{ categoria(item) }}</span>
+              <h2>{{ item.producto.nombre }}</h2>
+              <span class="muted">
+                {{ item.producto.precio | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}
+                por unidad
+              </span>
+            </div>
+            <div class="quantity" aria-label="Cantidad">
+              <button type="button" (click)="decrementar(item)" [disabled]="item.cantidad <= 1">
+                -
+              </button>
+              <span>{{ item.cantidad }}</span>
+              <button
+                type="button"
+                (click)="incrementar(item)"
+                [disabled]="item.cantidad >= item.producto.stock"
+              >
+                +
+              </button>
+            </div>
+            <strong class="subtotal">
+              {{
+                item.producto.precio * item.cantidad
+                  | currency: 'COP' : 'symbol-narrow' : '1.0-0'
+              }}
+            </strong>
+            <button class="remove" type="button" (click)="quitar(item)">Quitar</button>
+          </article>
+        }
+      </div>
+
+      <aside class="summary">
+        <h2>Resumen del pedido</h2>
+        <div class="summary-row">
+          <span>Productos</span>
+          <span>{{ cart.cantidadTotal() }}</span>
+        </div>
+        <div class="summary-row">
+          <span>Envio</span>
+          <span class="free">Gratis</span>
+        </div>
+        <div class="summary-row total">
+          <span>Total</span>
+          <strong>{{ cart.total() | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
+        </div>
+        <button
+          class="btn btn-primary checkout"
+          type="button"
+          (click)="comprar()"
+          [disabled]="enviando()"
+        >
+          {{ enviando() ? 'Procesando...' : 'Finalizar compra' }}
+        </button>
+        <p class="muted note">El stock se valida al confirmar la compra.</p>
+      </aside>
+    </div>
+  }
+</section>

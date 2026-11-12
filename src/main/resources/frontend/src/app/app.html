@@ -1,0 +1,54 @@
+<div class="app-shell">
+  <header class="app-header">
+    <a class="brand" routerLink="/productos">
+      <span class="brand-logo">P</span>
+      <span class="brand-text">
+        <strong>Productos API</strong>
+        <small>Catalogo y compras</small>
+      </span>
+    </a>
+
+    <nav class="app-nav">
+      <a routerLink="/productos" routerLinkActive="active">Productos</a>
+      @if (auth.autenticado()) {
+        <a routerLink="/carrito" routerLinkActive="active">
+          Carrito
+          @if (cart.cantidadTotal() > 0) {
+            <span class="cart-count">{{ cart.cantidadTotal() }}</span>
+          }
+        </a>
+        <a routerLink="/mis-compras" routerLinkActive="active">Mis compras</a>
+      }
+      <a href="/swagger-ui.html" target="_blank" rel="noopener">Swagger</a>
+    </nav>
+
+    <div class="session">
+      @if (auth.autenticado()) {
+        <span class="session-user">
+          <span class="avatar">{{ auth.usuario()?.username?.charAt(0)?.toUpperCase() }}</span>
+          <span class="session-name">
+            {{ auth.usuario()?.username }}
+            <span class="role-badge">{{ auth.roles().join(', ') }}</span>
+          </span>
+        </span>
+        <button class="btn btn-sm session-logout" type="button" (click)="cerrarSesion()">
+          Salir
+        </button>
+      } @else {
+        <a class="btn btn-sm session-login" routerLink="/login">Iniciar sesion</a>
+      }
+    </div>
+  </header>
+
+  <main class="app-main">
+    <router-outlet />
+  </main>
+
+  <footer class="app-footer">
+    <span>Angular + Spring Boot</span>
+    <span class="footer-links">
+      <a href="/v3/api-docs" target="_blank" rel="noopener">OpenAPI</a>
+      <a href="/actuator/health" target="_blank" rel="noopener">Estado de la API</a>
+    </span>
+  </footer>
+</div>

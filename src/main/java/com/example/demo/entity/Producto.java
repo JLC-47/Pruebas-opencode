@@ -33,4 +33,14 @@ public class Producto {
 
     @Column(nullable = false)
     private Integer stock;
+
+    @Column(length = 60)
+    private String categoria;
+
+    @Column(length = 300)
+    private String descripcion;
+
+    public Producto(Long id, String nombre, BigDecimal precio, Integer stock) {
+        this(id, nombre, precio, stock, null, null);
+    }
 }
