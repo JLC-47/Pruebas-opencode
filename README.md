@@ -1,6 +1,6 @@
 # Productos API
 
-Aplicacion web de catalogo y compras construida con Spring Boot y Angular. Incluye paginacion, busqueda, validacion de datos, autenticacion JWT con roles, carrito de compras, checkout con descuento transaccional de stock, historial de pedidos, manejo centralizado de errores, documentacion OpenAPI, pruebas automatizadas con cobertura y una coleccion de Postman lista para ejecutar.
+Aplicacion web de catalogo y compras construida con Spring Boot y Angular. Incluye paginacion, busqueda, validacion de datos, autenticacion JWT con roles, carrito de compras, checkout con descuento transaccional de stock, historial de pedidos, devoluciones parciales o totales que reponen el inventario, manejo centralizado de errores, documentacion OpenAPI, pruebas automatizadas con cobertura y una coleccion de Postman lista para ejecutar.
 
 ## Tecnologias
 
@@ -220,7 +220,7 @@ Authorization: Bearer <accessToken>
 | --- | --- | --- | --- |
 | `GET /api/productos/**` | Si | Si | No |
 | `POST`, `PUT`, `DELETE /api/productos/**` | No | Si | No |
-| `GET`, `POST /api/compras` | Si | Si | No |
+| `GET`, `POST /api/compras` y `/api/compras/{id}/devoluciones` | Si | Si | No |
 | `/api/auth/login`, `/refresh`, `/logout` | - | - | Si |
 | `/actuator/health`, `/actuator/info` | - | - | Si |
 | `/v3/api-docs/**`, `/swagger-ui/**` | - | - | Si |
@@ -272,7 +272,25 @@ Las rutas profundas como `/productos/5/editar`, `/carrito` y `/login` se redirig
 
 El catálogo permite agregar productos al carrito, ajustar cantidades, quitar artículos y confirmar la compra. El carrito se persiste en `localStorage` bajo la clave `productos.cart` y se limpia al cerrar sesión o al completar una compra.
 
-Al confirmar, el backend valida cada producto y su stock, consolida artículos duplicados y descuenta el inventario dentro de una sola transacción. Si un producto no existe se devuelve `404`; si no hay stock suficiente o el carrito está vacío, `400`/`409` según corresponda. El historial muestra cada pedido con sus artículos y total.
+Al confirmar, el backend valida cada producto y su stock, consolida artículos duplicados y descuenta el inventario dentro de una sola transacción. Si un producto no existe se devuelve `404`; si no hay stock suficiente o el carrito está vacío, `400`/`409` según corresponda. El historial muestra cada pedido con sus artículos, total, estado y unidades devueltas.
+
+Desde **Mis compras** se puede devolver un producto o el pedido completo. Cada devolución valida las unidades compradas, suma de nuevo esas unidades al inventario del producto y actualiza el estado del pedido (`COMPLETADA`, `DEVUELTA_PARCIAL` o `DEVUELTA_TOTAL`). No se pueden devolver productos ajenos al pedido, compras de otro usuario ni más unidades de las compradas.
+
+Ejemplo de devolución parcial:
+
+```http
+POST /api/compras/12/devoluciones
+Authorization: Bearer <accessToken>
+Content-Type: application/json
+
+{
+  "items": [
+    { "productoId": 3, "cantidad": 1 }
+  ]
+}
+```
+
+La respuesta es la compra actualizada con `estado`, `totalDevuelto` y `cantidadDevuelta` por artículo.
 
 ## Endpoints
 
@@ -288,6 +306,7 @@ Al confirmar, el backend valida cada producto y su stock, consolida artículos d
 | DELETE | `/api/productos/{id}` | Elimina un producto | ADMIN | 204, 401, 403, 404 |
 | POST | `/api/compras` | Confirma el carrito y descuenta stock | USER/ADMIN | 201, 400, 401, 404, 409 |
 | GET | `/api/compras` | Lista las compras del usuario autenticado | USER/ADMIN | 200, 401 |
+| POST | `/api/compras/{id}/devoluciones` | Devuelve unidades de un pedido y repone stock | USER/ADMIN | 200, 400, 401, 404 |
 | GET | `/v3/api-docs` | Documento OpenAPI en JSON | 200 |
 | GET | `/swagger-ui.html` | Swagger UI interactivo | 200 |
 | GET | `/actuator/health` | Estado de la aplicacion | 200 |
@@ -399,7 +418,7 @@ Con la aplicacion en ejecucion:
 
 ## Pruebas automatizadas
 
-La suite del backend incluye **104 pruebas** y no requiere MySQL: usa H2 en memoria con el perfil `test`. El frontend agrega **54 pruebas** con Vitest.
+La suite del backend incluye **112 pruebas** y no requiere MySQL: usa H2 en memoria con el perfil `test`. El frontend agrega **57 pruebas** con Vitest.
 
 | Clase | Tipo | Pruebas | Que cubre |
 | --- | --- | ---: | --- |
@@ -407,7 +426,7 @@ La suite del backend incluye **104 pruebas** y no requiere MySQL: usa H2 en memo
 | `ProductoControllerTest` | Web con MockMvc | 17 | Codigos HTTP, validacion, paginacion, errores y metadatos |
 | `ProductoApiIntegrationTest` | Integracion | 9 | Flujo CRUD autenticado, H2, paginacion, busqueda, health, OpenAPI y 404 |
 | `AuthApiIntegrationTest` | Integracion | 12 | Login, refresh con rotacion, logout, errores 401/403 y permisos por rol |
-| `CompraApiIntegrationTest` | Integracion | 8 | Checkout, descuento de stock, duplicados, historial, 400/404/409 y 401 |
+| `CompraApiIntegrationTest` | Integracion | 16 | Checkout, descuento y reposicion de stock, devoluciones parciales/totales, duplicados, historial, 400/404/409 y 401 |
 | `ProductoRepositoryTest` | Persistencia con `@DataJpaTest` | 6 | Guardado, actualizacion, borrado, busqueda y paginacion |
 | `GlobalExceptionHandlerTest` | Unitaria | 11 | Todos los `ProblemDetail` y errores de validacion |
 | `ProductoRequestValidationTest` | Unitaria (Bean Validation) | 14 | Reglas de nombre, precio y stock |
@@ -430,6 +449,9 @@ La suite del backend incluye **104 pruebas** y no requiere MySQL: usa H2 en memo
 | `CompraApiIntegrationTest` | `compraDescuentaStockYRegistraElHistorial` | Checkout real y persistencia del pedido |
 | `CompraApiIntegrationTest` | `compraSinStockNoModificaElInventario` | Transaccion y respuesta 409 |
 | `CompraApiIntegrationTest` | `carritoVacioDevuelve400` | Validacion del carrito |
+| `CompraApiIntegrationTest` | `devolucionTotalReponeElInventarioYCambiaElEstado` | Devolucion total y reposicion de stock |
+| `CompraApiIntegrationTest` | `devolucionParcialReponeSoloLasUnidadesDevueltas` | Devoluciones parciales acumuladas |
+| `CompraApiIntegrationTest` | `noSePuedeDevolverUnaCompraDeOtroUsuario` | Aislamiento de devoluciones por usuario |
 | `ProductoApiIntegrationTest` | `healthEndpointDevuelveUp` | Actuator responde `UP` |
 | `ProductoApiIntegrationTest` | `documentacionOpenApiEstaDisponible` | `/v3/api-docs` expone el titulo y las rutas |
 | `ProductoServiceTest` | `listarEnviaElOrdenamientoSolicitadoAlRepositorio` | Que `sort` y `direction` lleguen al `Pageable` |
@@ -451,7 +473,7 @@ La suite del backend incluye **104 pruebas** y no requiere MySQL: usa H2 en memo
 | `producto-form.component.spec.ts` | 4 | Validacion, creacion, categoria/descripcion, edicion y actualizacion |
 | `cart.service.spec.ts` | 7 | Persistencia, limites de stock, quitar, vaciar y checkout |
 | `carrito.component.spec.ts` | 4 | Listado, cantidades, eliminacion y confirmacion de compra |
-| `mis-compras.component.spec.ts` | 3 | Historial, estado vacio y errores |
+| `mis-compras.component.spec.ts` | 6 | Historial, estado vacio, errores y devoluciones |
 | `login.component.spec.ts` | 5 | Validacion, login, `returnUrl`, error y credenciales demo |
 | `app.spec.ts` | 4 | Shell, navegacion, sesion visible, badge del carrito y logout |
 
@@ -509,7 +531,7 @@ La suite del backend incluye **104 pruebas** y no requiere MySQL: usa H2 en memo
 4. Verifica el resultado. Debe aparecer un resumen similar a:
 
    ```text
-   Tests run: 104, Failures: 0, Errors: 0, Skipped: 0
+   Tests run: 112, Failures: 0, Errors: 0, Skipped: 0
    BUILD SUCCESS
    ```
 
@@ -572,8 +594,8 @@ No necesitas MySQL: el perfil `test` (`src/test/resources/application-test.yaml`
 El workflow `.github/workflows/ci.yml` se ejecuta en cada `push` y `pull request`:
 
 1. Descarga el codigo del repositorio.
-2. **Job `pruebas`**: configura Java 21 (Temurin) con cache de Maven, ejecuta `mvn -B verify` con las 104 pruebas y valida la cobertura, y publica `target/site/jacoco` como artefacto descargable.
-3. **Job `frontend`**: configura Node 24 con cache de npm, ejecuta `npm ci`, `npm run test:ci` con las 54 pruebas de Vitest y compila con `npm run build`.
+2. **Job `pruebas`**: configura Java 21 (Temurin) con cache de Maven, ejecuta `mvn -B verify` con las 112 pruebas y valida la cobertura, y publica `target/site/jacoco` como artefacto descargable.
+3. **Job `frontend`**: configura Node 24 con cache de npm, ejecuta `npm ci`, `npm run test:ci` con las 57 pruebas de Vitest y compila con `npm run build`.
 
 Para verlo, sube el proyecto a GitHub y abre la pestana **Actions** del repositorio. Para reproducir la ejecucion localmente:
 

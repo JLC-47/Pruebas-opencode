@@ -3,7 +3,7 @@
     <div>
       <span class="eyebrow">Historial</span>
       <h1>Mis compras</h1>
-      <p class="muted">Consulta tus pedidos y los productos adquiridos.</p>
+      <p class="muted">Consulta tus pedidos, devuelve productos y revisa el inventario repuesto.</p>
     </div>
     <a class="btn btn-primary" routerLink="/productos">Comprar de nuevo</a>
   </header>
@@ -12,6 +12,10 @@
     <div class="alert alert-success">
       Compra #{{ compraConfirmada() }} confirmada. Gracias por tu pedido.
     </div>
+  }
+
+  @if (mensaje()) {
+    <div class="alert alert-success">{{ mensaje() }}</div>
   }
 
   @if (error()) {
@@ -36,7 +40,20 @@
               <span class="muted">{{ compra.fecha | date: 'dd/MM/yyyy HH:mm' }}</span>
             </div>
             <div class="order-total">
-              <span class="muted">{{ unidades(compra.items) }} unidad(es)</span>
+              <span
+                class="status-badge"
+                [class.status-completada]="compra.estado === 'COMPLETADA'"
+                [class.status-devuelta-parcial]="compra.estado === 'DEVUELTA_PARCIAL'"
+                [class.status-devuelta-total]="compra.estado === 'DEVUELTA_TOTAL'"
+              >
+                {{ estadoTexto(compra.estado) }}
+              </span>
+              <span class="muted">
+                {{ unidades(compra.items) }} unidad(es)
+                @if (unidadesDevueltas(compra.items) > 0) {
+                  · {{ unidadesDevueltas(compra.items) }} devuelta(s)
+                }
+              </span>
               <strong>{{ compra.total | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</strong>
             </div>
           </header>
@@ -44,12 +61,54 @@
           <ul>
             @for (item of compra.items; track item.productoId) {
               <li>
-                <span class="item-name">{{ item.productoNombre }}</span>
+                <span class="item-name">
+                  {{ item.productoNombre }}
+                  @if (item.cantidadDevuelta > 0) {
+                    <small class="returned">
+                      {{ item.cantidadDevuelta }} devuelta(s)
+                    </small>
+                  }
+                </span>
                 <span class="muted">x{{ item.cantidad }}</span>
                 <span>{{ item.subtotal | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</span>
+                <span class="item-return">
+                  @if (pendientes(item) > 0) {
+                    <button
+                      class="btn btn-sm"
+                      type="button"
+                      [disabled]="devolviendo() !== null"
+                      (click)="devolverItem(compra, item)"
+                    >
+                      Devolver {{ pendientes(item) }}
+                    </button>
+                  } @else {
+                    <span class="returned">Devuelto</span>
+                  }
+                </span>
               </li>
             }
           </ul>
+
+          <footer class="order-footer">
+            @if (compra.totalDevuelto > 0) {
+              <span class="muted">
+                Reembolsado:
+                {{ compra.totalDevuelto | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}
+              </span>
+            } @else {
+              <span></span>
+            }
+            @if (puedeDevolver(compra)) {
+              <button
+                class="btn btn-sm btn-danger"
+                type="button"
+                [disabled]="devolviendo() !== null"
+                (click)="devolverTodo(compra)"
+              >
+                {{ devolviendo() === compra.id ? 'Procesando...' : 'Devolver pedido completo' }}
+              </button>
+            }
+          </footer>
         </article>
       }
     </div>

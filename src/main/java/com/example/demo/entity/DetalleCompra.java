@@ -45,6 +45,9 @@ public class DetalleCompra {
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal subtotal;
 
+    @Column(name = "cantidad_devuelta")
+    private Integer cantidadDevuelta = 0;
+
     public DetalleCompra(
             Long productoId,
             String productoNombre,
@@ -56,5 +59,18 @@ public class DetalleCompra {
         this.cantidad = cantidad;
         this.precioUnitario = precioUnitario;
         this.subtotal = subtotal;
+        this.cantidadDevuelta = 0;
+    }
+
+    public int getCantidadDevueltaSegura() {
+        return cantidadDevuelta == null ? 0 : cantidadDevuelta;
+    }
+
+    public int getCantidadPendiente() {
+        return cantidad - getCantidadDevueltaSegura();
+    }
+
+    public boolean estaTotalmenteDevuelta() {
+        return getCantidadPendiente() <= 0;
     }
 }

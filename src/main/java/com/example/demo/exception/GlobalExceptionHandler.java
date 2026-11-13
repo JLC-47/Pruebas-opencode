@@ -30,6 +30,14 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
+    @ExceptionHandler(CompraNotFoundException.class)
+    public ProblemDetail handleCompraNotFound(CompraNotFoundException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        problem.setTitle("Compra no encontrada");
+        problem.setProperty("timestamp", Instant.now().toString());
+        return problem;
+    }
+
     @ExceptionHandler(StockInsuficienteException.class)
     public ProblemDetail handleStockInsuficiente(StockInsuficienteException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());

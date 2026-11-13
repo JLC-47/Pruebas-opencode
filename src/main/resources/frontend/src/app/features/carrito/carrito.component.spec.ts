@@ -23,6 +23,8 @@ const compra: Compra = {
   id: 7,
   fecha: '2026-11-12T10:00:00Z',
   total: 5000000,
+  totalDevuelto: 0,
+  estado: 'COMPLETADA',
   items: [],
 };
 

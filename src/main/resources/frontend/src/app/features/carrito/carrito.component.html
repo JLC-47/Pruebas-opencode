@@ -31,6 +31,7 @@
                 {{ item.producto.precio | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}
                 por unidad
               </span>
+              <span class="stock-note">Disponible: {{ item.producto.stock }}</span>
             </div>
             <div class="quantity" aria-label="Cantidad">
               <button type="button" (click)="decrementar(item)" [disabled]="item.cantidad <= 1">
@@ -77,6 +78,14 @@
           [disabled]="enviando()"
         >
           {{ enviando() ? 'Procesando...' : 'Finalizar compra' }}
+        </button>
+        <button
+          class="btn vaciar"
+          type="button"
+          [disabled]="enviando()"
+          (click)="vaciar()"
+        >
+          Vaciar carrito
         </button>
         <p class="muted note">El stock se valida al confirmar la compra.</p>
       </aside>

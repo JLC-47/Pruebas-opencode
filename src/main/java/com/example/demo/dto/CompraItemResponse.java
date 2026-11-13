@@ -8,6 +8,7 @@ public record CompraItemResponse(
         Long productoId,
         String productoNombre,
         Integer cantidad,
+        Integer cantidadDevuelta,
         BigDecimal precioUnitario,
         BigDecimal subtotal
 ) {
@@ -17,6 +18,7 @@ public record CompraItemResponse(
                 detalle.getProductoId(),
                 detalle.getProductoNombre(),
                 detalle.getCantidad(),
+                detalle.getCantidadDevueltaSegura(),
                 detalle.getPrecioUnitario(),
                 detalle.getSubtotal()
         );

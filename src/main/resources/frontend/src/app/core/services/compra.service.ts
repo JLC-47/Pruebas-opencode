@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { Compra, CompraRequest } from '../models/compra.model';
+import { Compra, CompraRequest, DevolucionRequest } from '../models/compra.model';
 
 @Injectable({ providedIn: 'root' })
 export class CompraService {
@@ -14,5 +14,9 @@ export class CompraService {
 
   listar(): Observable<Compra[]> {
     return this.http.get<Compra[]>(this.baseUrl);
+  }
+
+  devolver(compraId: number, request: DevolucionRequest): Observable<Compra> {
+    return this.http.post<Compra>(`${this.baseUrl}/${compraId}/devoluciones`, request);
   }
 }

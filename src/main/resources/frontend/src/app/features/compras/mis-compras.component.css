@@ -37,11 +37,36 @@
 }
 
 .order-total {
+  justify-items: end;
   text-align: right;
 }
 
 .order-total strong {
   font-size: 1.05rem;
+}
+
+.status-badge {
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.status-completada {
+  background: #e0f2fe;
+  color: #075985;
+}
+
+.status-devuelta-parcial {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-devuelta-total {
+  background: #f1f5f9;
+  color: #475569;
 }
 
 .order-card ul {
@@ -54,7 +79,7 @@
 
 .order-card li {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
   gap: 1rem;
   align-items: center;
   border-bottom: 1px dashed var(--color-border);
@@ -67,9 +92,45 @@
 }
 
 .item-name {
+  display: grid;
+  gap: 0.1rem;
   font-weight: 600;
+}
+
+.returned {
+  color: #b45309;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.item-return {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.order-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-top: 1px solid var(--color-border);
+  background: #fbfdff;
+  padding: 0.85rem 1.25rem;
 }
 
 .state-box .btn {
   margin-top: 0.75rem;
+}
+
+@media (max-width: 640px) {
+  .order-card li {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .item-return {
+    grid-column: 2;
+    justify-self: end;
+  }
 }

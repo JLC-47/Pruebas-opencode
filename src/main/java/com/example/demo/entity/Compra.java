@@ -48,4 +48,29 @@ public class Compra {
         item.setCompra(this);
         items.add(item);
     }
+
+    public int getUnidadesTotales() {
+        return items.stream().mapToInt(DetalleCompra::getCantidad).sum();
+    }
+
+    public int getUnidadesDevueltas() {
+        return items.stream().mapToInt(DetalleCompra::getCantidadDevueltaSegura).sum();
+    }
+
+    public EstadoCompra getEstado() {
+        int devueltas = getUnidadesDevueltas();
+        if (devueltas <= 0) {
+            return EstadoCompra.COMPLETADA;
+        }
+        return devueltas >= getUnidadesTotales()
+                ? EstadoCompra.DEVUELTA_TOTAL
+                : EstadoCompra.DEVUELTA_PARCIAL;
+    }
+
+    public BigDecimal getTotalDevuelto() {
+        return items.stream()
+                .map(item -> item.getPrecioUnitario()
+                        .multiply(BigDecimal.valueOf(item.getCantidadDevueltaSegura())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
 }

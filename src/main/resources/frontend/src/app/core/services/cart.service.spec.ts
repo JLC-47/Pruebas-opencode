@@ -27,11 +27,14 @@ const compra: Compra = {
   id: 9,
   fecha: '2026-11-12T10:00:00Z',
   total: 2500000,
+  totalDevuelto: 0,
+  estado: 'COMPLETADA',
   items: [
     {
       productoId: 1,
       productoNombre: 'Laptop',
       cantidad: 1,
+      cantidadDevuelta: 0,
       precioUnitario: 2500000,
       subtotal: 2500000,
     },

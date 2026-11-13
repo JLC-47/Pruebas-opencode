@@ -30,6 +30,15 @@ export class CarritoComponent {
     this.cart.quitar(item.producto.id);
   }
 
+  vaciar(): void {
+    if (this.cart.vacio()) {
+      return;
+    }
+    if (window.confirm('Vaciar el carrito de compras?')) {
+      this.cart.limpiar();
+    }
+  }
+
   comprar(): void {
     if (this.cart.vacio() || this.enviando()) {
       return;
