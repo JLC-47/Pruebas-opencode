@@ -2,9 +2,20 @@ spring:
   jpa:
     show-sql: false
     hibernate:
-      ddl-auto: validate
+      ddl-auto: ${JPA_DDL_AUTO:validate}
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+  seed:
+    enabled: false
 
 management:
   endpoint:
     health:
       show-details: never
+
+logging:
+  level:
+    root: INFO
+    com.example.demo: INFO

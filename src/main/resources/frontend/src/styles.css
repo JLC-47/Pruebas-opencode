@@ -25,10 +25,14 @@ body {
 body {
   background:
     radial-gradient(circle at top left, rgb(56 189 248 / 10%), transparent 32rem),
-    radial-gradient(circle at bottom right, rgb(37 99 235 / 8%), transparent 30rem),
-    var(--color-bg);
+    radial-gradient(circle at bottom right, rgb(37 99 235 / 8%), transparent 30rem), var(--color-bg);
   color: var(--color-text);
-  font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
+  font-family:
+    'Segoe UI',
+    'Inter',
+    system-ui,
+    -apple-system,
+    sans-serif;
   line-height: 1.5;
 }
 
@@ -99,7 +103,10 @@ a {
   font-weight: 600;
   padding: 0.55rem 1rem;
   text-decoration: none;
-  transition: background 150ms ease, border-color 150ms ease, color 150ms ease,
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease,
     transform 150ms ease;
 }
 

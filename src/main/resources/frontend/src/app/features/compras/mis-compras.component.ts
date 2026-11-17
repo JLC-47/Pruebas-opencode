@@ -52,10 +52,7 @@ export class MisComprasComponent implements OnInit {
   }
 
   unidadesDevueltas(items: CompraItem[]): number {
-    return items.reduce(
-      (total, item) => total + (item.cantidadDevuelta ?? 0),
-      0,
-    );
+    return items.reduce((total, item) => total + (item.cantidadDevuelta ?? 0), 0);
   }
 
   pendientes(item: CompraItem): number {
@@ -91,9 +88,7 @@ export class MisComprasComponent implements OnInit {
       return;
     }
 
-    this.enviarDevolucion(compra.id, [
-      { productoId: item.productoId, cantidad },
-    ]);
+    this.enviarDevolucion(compra.id, [{ productoId: item.productoId, cantidad }]);
   }
 
   devolverTodo(compra: Compra): void {
@@ -109,9 +104,7 @@ export class MisComprasComponent implements OnInit {
     }
 
     if (
-      !window.confirm(
-        `Devolver el pedido #${compra.id} completo? El inventario se actualizara.`,
-      )
+      !window.confirm(`Devolver el pedido #${compra.id} completo? El inventario se actualizara.`)
     ) {
       return;
     }
@@ -119,10 +112,7 @@ export class MisComprasComponent implements OnInit {
     this.enviarDevolucion(compra.id, items);
   }
 
-  private enviarDevolucion(
-    compraId: number,
-    items: ItemDevolucionRequest[],
-  ): void {
+  private enviarDevolucion(compraId: number, items: ItemDevolucionRequest[]): void {
     if (this.devolviendo() !== null) {
       return;
     }
@@ -137,9 +127,7 @@ export class MisComprasComponent implements OnInit {
       .subscribe({
         next: (actualizada) => {
           this.compras.update((compras) =>
-            compras.map((compra) =>
-              compra.id === actualizada.id ? actualizada : compra,
-            ),
+            compras.map((compra) => (compra.id === actualizada.id ? actualizada : compra)),
           );
           this.mensaje.set(
             `Devolucion del pedido #${actualizada.id} registrada. El inventario fue repuesto.`,

@@ -142,7 +142,7 @@ public class GlobalExceptionHandler {
         log.warn("Conflicto de integridad de datos", ex);
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(
                 HttpStatus.CONFLICT,
-                "No fue posible guardar el producto por un conflicto con los datos existentes");
+                "No fue posible guardar los datos por un conflicto con la informacion existente");
         problem.setTitle("Conflicto de datos");
         problem.setProperty("timestamp", Instant.now().toString());
         return problem;

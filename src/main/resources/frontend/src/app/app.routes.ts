@@ -27,9 +27,7 @@ export const routes: Routes = [
     path: 'mis-compras',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./features/compras/mis-compras.component').then(
-        (m) => m.MisComprasComponent,
-      ),
+      import('./features/compras/mis-compras.component').then((m) => m.MisComprasComponent),
   },
   {
     path: '**',

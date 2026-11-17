@@ -2,13 +2,21 @@ name: CI
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   pruebas:
     name: Pruebas y cobertura
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Descargar el codigo
         uses: actions/checkout@v4
@@ -21,7 +29,7 @@ jobs:
           cache: maven
 
       - name: Ejecutar pruebas y verificar cobertura
-        run: mvn -B verify
+        run: mvn -B clean verify
 
       - name: Publicar reporte de JaCoCo
         if: always()
@@ -34,6 +42,7 @@ jobs:
   frontend:
     name: Frontend Angular
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: src/main/resources/frontend
@@ -51,8 +60,24 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
+      - name: Verificar formato
+        run: npm run format:check
+
       - name: Ejecutar pruebas del frontend
         run: npm run test:ci
 
       - name: Compilar el frontend
         run: npm run build
+
+  compose:
+    name: Configuracion de Docker Compose
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      JWT_SECRET: Y2xhdmUtc3VwZXItc2VndXJhLXBhcmEtZGVzYXJyb2xsby1sb2NhbC0yMDI2LXByb2R1Y3Rvcy1hcGk=
+    steps:
+      - name: Descargar el codigo
+        uses: actions/checkout@v4
+
+      - name: Validar docker-compose.yml
+        run: docker compose config --quiet

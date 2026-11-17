@@ -1,8 +1,5 @@
 import { provideHttpClient } from '@angular/common/http';
-import {
-  HttpTestingController,
-  provideHttpClientTesting,
-} from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { TokenResponse } from '../models/auth.model';
 import { AuthService } from './auth.service';
@@ -47,9 +44,9 @@ describe('AuthService', () => {
   it('inicia sesion, guarda la sesion y expone usuario y roles', () => {
     let resultado: unknown;
 
-    servicio.iniciarSesion({ username: 'admin', password: 'admin123' }).subscribe(
-      (sesion) => (resultado = sesion),
-    );
+    servicio
+      .iniciarSesion({ username: 'admin', password: 'admin123' })
+      .subscribe((sesion) => (resultado = sesion));
 
     const peticion = http.expectOne('/api/auth/login');
     expect(peticion.request.method).toBe('POST');

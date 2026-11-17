@@ -1,8 +1,4 @@
-import {
-  HttpErrorResponse,
-  HttpInterceptorFn,
-  HttpRequest,
-} from '@angular/common/http';
+import { HttpErrorResponse, HttpInterceptorFn, HttpRequest } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, switchMap, throwError } from 'rxjs';
@@ -40,24 +36,18 @@ export const apiInterceptor: HttpInterceptorFn = (request, next) => {
 
   return next(preparar(auth.accessToken())).pipe(
     catchError((error: unknown) => {
-      if (
-        error instanceof HttpErrorResponse &&
-        error.status === 401 &&
-        !esEndpointAuth
-      ) {
+      if (error instanceof HttpErrorResponse && error.status === 401 && !esEndpointAuth) {
         return auth.refrescar().pipe(
           catchError((errorRefresco: unknown) => {
             const returnUrl = router.url;
             auth.limpiarSesion();
             void router.navigate(['/login'], {
-              queryParams:
-                returnUrl && returnUrl !== '/login' ? { returnUrl } : {},
+              queryParams: returnUrl && returnUrl !== '/login' ? { returnUrl } : {},
             });
 
             return throwError(() =>
               convertirError(
-                errorRefresco instanceof HttpErrorResponse &&
-                  errorRefresco.status === 401
+                errorRefresco instanceof HttpErrorResponse && errorRefresco.status === 401
                   ? errorRefresco
                   : error,
                 'Tu sesion expiro. Inicia sesion nuevamente.',
@@ -93,7 +83,7 @@ function convertirError(error: unknown, mensajePorDefecto?: string): ApiError {
   }
 
   const mensaje =
-    error instanceof Error ? error.message : mensajePorDefecto ?? 'Error inesperado';
+    error instanceof Error ? error.message : (mensajePorDefecto ?? 'Error inesperado');
   return new ApiError(mensaje, 0);
 }
 

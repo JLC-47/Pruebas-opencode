@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class SpaController {
 
-    @GetMapping({"/productos", "/productos/**", "/login"})
+    @GetMapping({"/", "/login", "/productos", "/productos/**", "/carrito", "/mis-compras"})
     public String redirigirAlFrontend() {
         return "forward:/index.html";
     }

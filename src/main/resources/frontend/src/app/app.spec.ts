@@ -76,9 +76,7 @@ describe('App', () => {
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('.session-login')?.textContent).toContain(
-      'Iniciar sesion',
-    );
+    expect(compiled.querySelector('.session-login')?.textContent).toContain('Iniciar sesion');
     expect(compiled.querySelectorAll('.app-nav a').length).toBe(2);
   });
 });

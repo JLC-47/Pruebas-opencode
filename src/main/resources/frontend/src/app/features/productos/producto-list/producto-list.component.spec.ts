@@ -155,8 +155,6 @@ describe('ProductoListComponent', () => {
     fixture.detectChanges();
 
     expect(cartMock.agregar).toHaveBeenCalledWith(pagina.content[0]);
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'se agrego al carrito',
-    );
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('se agrego al carrito');
   });
 });

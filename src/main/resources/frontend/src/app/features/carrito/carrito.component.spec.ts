@@ -101,9 +101,7 @@ describe('CarritoComponent', () => {
     fixture.componentInstance.comprar();
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'Stock insuficiente',
-    );
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Stock insuficiente');
   });
 
   it('muestra el estado vacio', async () => {
@@ -117,8 +115,6 @@ describe('CarritoComponent', () => {
     const fixture = TestBed.createComponent(CarritoComponent);
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'Tu carrito esta vacio',
-    );
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Tu carrito esta vacio');
   });
 });

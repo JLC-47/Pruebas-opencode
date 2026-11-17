@@ -3,7 +3,11 @@
     <div>
       <h1>{{ editando() ? 'Editar producto' : 'Nuevo producto' }}</h1>
       <p class="muted">
-        {{ editando() ? 'Actualiza los datos del producto.' : 'Completa los datos para registrar un producto.' }}
+        {{
+          editando()
+            ? 'Actualiza los datos del producto.'
+            : 'Completa los datos para registrar un producto.'
+        }}
       </p>
     </div>
     <a class="btn" routerLink="/productos">Volver</a>
@@ -78,7 +82,7 @@
       <div class="form-actions">
         <a class="btn" routerLink="/productos">Cancelar</a>
         <button class="btn btn-primary" type="submit" [disabled]="guardando()">
-          {{ guardando() ? 'Guardando...' : (editando() ? 'Actualizar' : 'Crear producto') }}
+          {{ guardando() ? 'Guardando...' : editando() ? 'Actualizar' : 'Crear producto' }}
         </button>
       </div>
     </form>

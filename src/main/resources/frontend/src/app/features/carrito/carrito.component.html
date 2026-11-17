@@ -48,8 +48,7 @@
             </div>
             <strong class="subtotal">
               {{
-                item.producto.precio * item.cantidad
-                  | currency: 'COP' : 'symbol-narrow' : '1.0-0'
+                item.producto.precio * item.cantidad | currency: 'COP' : 'symbol-narrow' : '1.0-0'
               }}
             </strong>
             <button class="remove" type="button" (click)="quitar(item)">Quitar</button>
@@ -79,12 +78,7 @@
         >
           {{ enviando() ? 'Procesando...' : 'Finalizar compra' }}
         </button>
-        <button
-          class="btn vaciar"
-          type="button"
-          [disabled]="enviando()"
-          (click)="vaciar()"
-        >
+        <button class="btn vaciar" type="button" [disabled]="enviando()" (click)="vaciar()">
           Vaciar carrito
         </button>
         <p class="muted note">El stock se valida al confirmar la compra.</p>

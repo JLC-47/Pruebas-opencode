@@ -21,10 +21,7 @@ export class CartService {
     this.itemsSignal().reduce((total, item) => total + item.cantidad, 0),
   );
   readonly total = computed(() =>
-    this.itemsSignal().reduce(
-      (total, item) => total + item.producto.precio * item.cantidad,
-      0,
-    ),
+    this.itemsSignal().reduce((total, item) => total + item.producto.precio * item.cantidad, 0),
   );
   readonly vacio = computed(() => this.itemsSignal().length === 0);
 
@@ -63,9 +60,7 @@ export class CartService {
   }
 
   quitar(productoId: number): void {
-    this.itemsSignal.update((items) =>
-      items.filter((item) => item.producto.id !== productoId),
-    );
+    this.itemsSignal.update((items) => items.filter((item) => item.producto.id !== productoId));
     this.guardar();
   }
 
@@ -88,16 +83,12 @@ export class CartService {
       })),
     };
 
-    return this.http
-      .post<Compra>('/api/compras', request)
-      .pipe(tap(() => this.limpiar()));
+    return this.http.post<Compra>('/api/compras', request).pipe(tap(() => this.limpiar()));
   }
 
   private actualizar(productoId: number, cantidad: number): void {
     this.itemsSignal.update((items) =>
-      items.map((item) =>
-        item.producto.id === productoId ? { ...item, cantidad } : item,
-      ),
+      items.map((item) => (item.producto.id === productoId ? { ...item, cantidad } : item)),
     );
     this.guardar();
   }

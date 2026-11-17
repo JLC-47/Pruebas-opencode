@@ -111,21 +111,11 @@
     </div>
 
     <footer class="pagination">
-      <button
-        class="btn btn-sm"
-        type="button"
-        [disabled]="first()"
-        (click)="cambiarPagina(-1)"
-      >
+      <button class="btn btn-sm" type="button" [disabled]="first()" (click)="cambiarPagina(-1)">
         Anterior
       </button>
       <span>Pagina {{ page() + 1 }} de {{ totalPages() || 1 }}</span>
-      <button
-        class="btn btn-sm"
-        type="button"
-        [disabled]="last()"
-        (click)="cambiarPagina(1)"
-      >
+      <button class="btn btn-sm" type="button" [disabled]="last()" (click)="cambiarPagina(1)">
         Siguiente
       </button>
     </footer>

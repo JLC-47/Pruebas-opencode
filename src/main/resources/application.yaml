@@ -3,9 +3,9 @@ spring:
     name: productos-api
 
   datasource:
-    url: jdbc:mysql://localhost:3306/tienda_db
-    username: root
-    password: 
+    url: ${DB_URL:jdbc:mysql://localhost:3306/pruebas_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
@@ -18,7 +18,7 @@ spring:
         format_sql: true
   web:
     error:
-      include-message: always
+      include-message: never
 
 server:
   port: 8080
@@ -29,7 +29,7 @@ management:
         include: health,info
   endpoint:
     health:
-      show-details: always
+      show-details: never
 
 app:
   jwt:
@@ -37,7 +37,7 @@ app:
     access-token-minutes: ${JWT_ACCESS_TOKEN_MINUTES:20}
     refresh-token-days: ${JWT_REFRESH_TOKEN_DAYS:7}
   seed:
-    enabled: ${APP_SEED_ENABLED:true}
+    enabled: ${APP_SEED_ENABLED:false}
     admin:
       username: ${APP_SEED_ADMIN_USERNAME:admin}
       password: ${APP_SEED_ADMIN_PASSWORD:admin123}

@@ -1,9 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import {
-  ActivatedRoute,
-  convertToParamMap,
-  provideRouter,
-} from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { Compra } from '../../core/models/compra.model';
 import { CompraService } from '../../core/services/compra.service';
@@ -35,20 +31,20 @@ const compra: Compra = {
   ],
 };
 
-async function configurar(opciones: {
-  compras?: Compra[];
-  error?: Error;
-  compraId?: string;
-  devolucion?: Compra;
-} = {}) {
+async function configurar(
+  opciones: {
+    compras?: Compra[];
+    error?: Error;
+    compraId?: string;
+    devolucion?: Compra;
+  } = {},
+) {
   const compraMock = {
     listar: vi.fn(() =>
       opciones.error ? throwError(() => opciones.error) : of(opciones.compras ?? []),
     ),
     devolver: vi.fn(() =>
-      opciones.error
-        ? throwError(() => opciones.error)
-        : of(opciones.devolucion ?? compra),
+      opciones.error ? throwError(() => opciones.error) : of(opciones.devolucion ?? compra),
     ),
   };
 
@@ -107,10 +103,7 @@ describe('MisComprasComponent', () => {
       ...compra,
       estado: 'DEVUELTA_PARCIAL',
       totalDevuelto: 2500000,
-      items: [
-        { ...compra.items[0], cantidadDevuelta: 1 },
-        compra.items[1],
-      ],
+      items: [{ ...compra.items[0], cantidadDevuelta: 1 }, compra.items[1]],
     };
     const { fixture, componente, compraMock } = await configurar({
       compras: [compra],
@@ -126,9 +119,7 @@ describe('MisComprasComponent', () => {
       items: [{ productoId: 1, cantidad: 2 }],
     });
     expect(componente.compras()[0].estado).toBe('DEVUELTA_PARCIAL');
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'inventario fue repuesto',
-    );
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('inventario fue repuesto');
   });
 
   it('devuelve todo el pedido y solo envia las unidades pendientes', async () => {
@@ -136,10 +127,7 @@ describe('MisComprasComponent', () => {
       ...compra,
       estado: 'DEVUELTA_PARCIAL',
       totalDevuelto: 45000,
-      items: [
-        compra.items[0],
-        { ...compra.items[1], cantidadDevuelta: 1 },
-      ],
+      items: [compra.items[0], { ...compra.items[1], cantidadDevuelta: 1 }],
     };
     const { fixture, componente, compraMock } = await configurar({
       compras: [parcial],

@@ -20,6 +20,11 @@ RUN mvn -B -q clean package -DskipTests
 
 FROM eclipse-temurin:21-jre-jammy
 
+LABEL org.opencontainers.image.title="productos-api" \
+      org.opencontainers.image.description="API REST de productos con Spring Boot" \
+      org.opencontainers.image.vendor="Example" \
+      org.opencontainers.image.version="0.0.1"
+
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/* \
@@ -27,7 +32,9 @@ RUN apt-get update \
     && useradd --system --gid spring spring
 
 WORKDIR /app
-COPY --from=build /workspace/target/*.jar app.jar
+COPY --from=build --chown=spring:spring /workspace/target/*.jar app.jar
+
+ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0"
 
 USER spring
 EXPOSE 8080

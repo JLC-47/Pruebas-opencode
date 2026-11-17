@@ -7,6 +7,17 @@ spring:
       hibernate:
         format_sql: true
 
+management:
+  endpoint:
+    health:
+      show-details: always
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:Y2xhdmUtc3VwZXItc2VndXJhLXBhcmEtZGVzYXJyb2xsby1sb2NhbC0yMDI2LXByb2R1Y3Rvcy1hcGk=}
+  seed:
+    enabled: true
+
 logging:
   level:
     com.example.demo: DEBUG

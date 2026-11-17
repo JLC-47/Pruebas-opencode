@@ -1,12 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import {
-  PageResponse,
-  Producto,
-  ProductoQuery,
-  ProductoRequest,
-} from '../models/producto.model';
+import { PageResponse, Producto, ProductoQuery, ProductoRequest } from '../models/producto.model';
 
 @Injectable({ providedIn: 'root' })
 export class ProductoService {

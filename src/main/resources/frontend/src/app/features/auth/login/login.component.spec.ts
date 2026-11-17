@@ -1,10 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import {
-  ActivatedRoute,
-  Router,
-  convertToParamMap,
-  provideRouter,
-} from '@angular/router';
+import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { Sesion } from '../../../core/models/auth.model';
 import { AuthService } from '../../../core/services/auth.service';
@@ -101,18 +96,14 @@ describe('LoginComponent', () => {
 
   it('muestra el error cuando las credenciales son invalidas', async () => {
     const { fixture, componente, authMock } = await configurar();
-    authMock.iniciarSesion.mockReturnValue(
-      throwError(() => new Error('Credenciales invalidas')),
-    );
+    authMock.iniciarSesion.mockReturnValue(throwError(() => new Error('Credenciales invalidas')));
     fixture.detectChanges();
 
     componente.form.setValue({ username: 'admin', password: 'incorrecta' });
     componente.iniciarSesion();
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
-      'Credenciales invalidas',
-    );
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Credenciales invalidas');
   });
 
   it('completa el formulario con las credenciales de demostracion', async () => {

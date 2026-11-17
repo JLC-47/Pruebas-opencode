@@ -1,19 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
-import {
-  Observable,
-  catchError,
-  finalize,
-  map,
-  shareReplay,
-  throwError,
-} from 'rxjs';
-import {
-  LoginRequest,
-  Sesion,
-  TokenResponse,
-  UsuarioSesion,
-} from '../models/auth.model';
+import { Observable, catchError, finalize, map, shareReplay, throwError } from 'rxjs';
+import { LoginRequest, Sesion, TokenResponse, UsuarioSesion } from '../models/auth.model';
 
 const STORAGE_KEY = 'productos.auth.session';
 const RENOVACION_ANTICIPADA_MS = 60_000;
@@ -128,9 +116,12 @@ export class AuthService {
     }
 
     const espera = sesionActual.expiresAt - Date.now() - RENOVACION_ANTICIPADA_MS;
-    this.temporizador = setTimeout(() => {
-      this.refrescar().subscribe({ error: () => undefined });
-    }, Math.max(espera, 0));
+    this.temporizador = setTimeout(
+      () => {
+        this.refrescar().subscribe({ error: () => undefined });
+      },
+      Math.max(espera, 0),
+    );
   }
 
   private leerSesion(): Sesion | null {

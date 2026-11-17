@@ -15,6 +15,8 @@ Aplicacion web de catalogo y compras construida con Spring Boot y Angular. Inclu
 - Node.js 24 y npm
 - Maven
 - GitHub Actions (CI)
+- Docker y Docker Compose
+- Prettier (formato del frontend)
 - Postman
 
 ## Estructura del proyecto
@@ -66,30 +68,31 @@ postman/        Coleccion de Postman
 mysql -u root -p < database/pruebas_db.sql
 ```
 
-2. Configura las credenciales con variables de entorno (o deja los valores por defecto):
+2. Configura las credenciales con variables de entorno (o deja los valores por defecto). El script `database/pruebas_db.sql` crea el esquema completo (productos, usuarios, refresh tokens, compras y detalles); los datos de demostracion los carga la aplicacion.
 
 | Variable | Valor por defecto |
 | --- | --- |
-| `DB_URL` | `jdbc:mysql://localhost:3306/pruebas_db?...` |
+| `DB_URL` | `jdbc:mysql://localhost:3306/pruebas_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true` |
 | `DB_USERNAME` | `root` |
 | `DB_PASSWORD` | `root` |
 | `JPA_DDL_AUTO` | `update` |
 | `JPA_SHOW_SQL` | `false` |
 | `SERVER_PORT` | `8080` |
-| `JWT_SECRET` | Secreto Base64 de desarrollo incluido en `application.yaml` |
+| `JWT_SECRET` | Secreto de desarrollo por defecto; obligatorio en `prod` y recomendable sobrescribir siempre |
 | `JWT_ACCESS_TOKEN_MINUTES` | `20` |
 | `JWT_REFRESH_TOKEN_DAYS` | `7` |
-| `APP_SEED_ENABLED` | `true` |
+| `APP_SEED_ENABLED` | `false` (actívalo en `dev`/`test` para cargar usuarios y catalogo) |
 | `APP_SEED_ADMIN_USERNAME` / `APP_SEED_ADMIN_PASSWORD` | `admin` / `admin123` |
 | `APP_SEED_USER_USERNAME` / `APP_SEED_USER_PASSWORD` | `user` / `user123` |
 
-En produccion define siempre un `JWT_SECRET` propio de al menos 256 bits codificado en Base64.
+En produccion define siempre un `JWT_SECRET` propio de al menos 256 bits codificado en Base64: `application-prod.yaml` lo exige y la aplicacion falla en el arranque si no esta definido. Los mensajes de error del servlet y los detalles del health check no se exponen por defecto.
 
 Ejemplo en PowerShell:
 
 ```powershell
 $env:DB_USERNAME = "root"
 $env:DB_PASSWORD = "tu_password"
+$env:JWT_SECRET = "Y2xhdmUtc3VwZXItc2VndXJhLXBhcmEtZGVzYXJyb2xsby1sb2NhbC0yMDI2LXByb2R1Y3Rvcy1hcGk="
 mvn spring-boot:run
 ```
 
@@ -97,13 +100,15 @@ mvn spring-boot:run
 
 | Perfil | Comportamiento |
 | --- | --- |
-| `dev` | Muestra SQL, `ddl-auto=update`, logging DEBUG de la aplicacion |
-| `prod` | `ddl-auto=validate`, sin SQL en logs, health sin detalles |
-| `test` | H2 en memoria, `ddl-auto=create-drop` |
+| `dev` | Muestra SQL, `ddl-auto=update`, logging DEBUG, secreto JWT de desarrollo y seed activado |
+| `prod` | `ddl-auto=validate`, sin SQL en logs, health sin detalles, seed desactivado, exige `JWT_SECRET` |
+| `test` | H2 en memoria, `ddl-auto=create-drop`, seed activado con credenciales fijas |
 
 ```bash
 mvn spring-boot:run -Dspring-boot.run.profiles=dev
 ```
+
+Sin perfil activo la aplicacion usa MySQL, el secreto JWT de desarrollo y el seed desactivado; activa `dev` o `APP_SEED_ENABLED=true` para cargar usuarios y catalogo.
 
 ## Paso a paso para correr el proyecto
 
@@ -135,10 +140,10 @@ mvn spring-boot:run -Dspring-boot.run.profiles=dev
    cd ../../../..
    ```
 
-4. Inicia Spring Boot desde la raiz del proyecto:
+4. Inicia Spring Boot desde la raiz del proyecto con el perfil `dev` (incluye el secreto JWT de desarrollo y crea los usuarios de ejemplo):
 
    ```bash
-   mvn spring-boot:run
+   mvn spring-boot:run -Dspring-boot.run.profiles=dev
    ```
 
 5. Abre `http://localhost:8080`. Seras redirigido a `/login`.
@@ -157,7 +162,7 @@ mvn spring-boot:run -Dspring-boot.run.profiles=dev
 1. Terminal 1, backend:
 
    ```bash
-   mvn spring-boot:run
+   mvn spring-boot:run -Dspring-boot.run.profiles=dev
    ```
 
 2. Terminal 2, frontend:
@@ -169,6 +174,26 @@ mvn spring-boot:run -Dspring-boot.run.profiles=dev
    ```
 
 3. Abre `http://localhost:4200`. El proxy envia `/api`, `/actuator`, `/v3/api-docs` y `/swagger-ui` a `http://localhost:8080`.
+
+### Opcion C: aplicacion completa con Docker Compose
+
+1. Copia la plantilla de variables y ajusta los valores:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   `JWT_SECRET` debe ser Base64 de al menos 32 bytes. El valor incluido en `.env.example` es solo para desarrollo local.
+
+2. Construye y levanta MySQL y la aplicacion:
+
+   ```bash
+   docker compose up --build -d
+   ```
+
+3. Espera a que ambos health checks esten sanos (`docker compose ps`) y abre `http://localhost:8080`. MySQL queda enlazado a `127.0.0.1:3306`; el contenedor usa el usuario `DB_USERNAME` en lugar de `root`.
+
+4. Para detener y eliminar los contenedores: `docker compose down` (añade `-v` para borrar el volumen de datos).
 
 ## Autenticacion y roles
 
@@ -225,14 +250,14 @@ Authorization: Bearer <accessToken>
 | `/actuator/health`, `/actuator/info` | - | - | Si |
 | `/v3/api-docs/**`, `/swagger-ui/**` | - | - | Si |
 
-Usuarios de demostracion creados por `InicializadorDatos` cuando `app.seed.enabled=true`:
+Usuarios de demostracion creados por `InicializadorDatos` cuando `app.seed.enabled=true` (perfiles `dev` y `test`; nunca en `prod`):
 
 | Usuario | Contrasena | Rol |
 | --- | --- | --- |
 | `admin` | `admin123` | `ADMIN` |
 | `user` | `user123` | `USER` |
 
-Deshabilita el seed en produccion con `APP_SEED_ENABLED=false` o cambia las credenciales mediante las variables `APP_SEED_*`.
+El seed esta desactivado por defecto fuera de `dev`/`test`. Cambia las credenciales con las variables `APP_SEED_*` y usa contraseñas propias en cualquier entorno compartido.
 
 ## Frontend Angular
 
@@ -256,6 +281,8 @@ La sesion se guarda en `localStorage`, se restaura al recargar y se renueva auto
 ### Desarrollo
 
 Para trabajar con recarga automatica usa la **Opcion B** del paso a paso. El proxy de `proxy.conf.json` envia `/api`, `/actuator`, `/v3/api-docs` y `/swagger-ui` a `http://localhost:8080`.
+
+El formato se comprueba con `npm run format:check` y se aplica con `npm run format` (Prettier, configurado en `.prettierrc`). Ambos comandos se ejecutan desde `src/main/resources/frontend`.
 
 ### Compilar para Spring Boot
 
@@ -418,7 +445,7 @@ Con la aplicacion en ejecucion:
 
 ## Pruebas automatizadas
 
-La suite del backend incluye **112 pruebas** y no requiere MySQL: usa H2 en memoria con el perfil `test`. El frontend agrega **57 pruebas** con Vitest.
+La suite del backend incluye **117 pruebas** y no requiere MySQL: usa H2 en memoria con el perfil `test`. El frontend agrega **57 pruebas** con Vitest.
 
 | Clase | Tipo | Pruebas | Que cubre |
 | --- | --- | ---: | --- |
@@ -433,7 +460,8 @@ La suite del backend incluye **112 pruebas** y no requiere MySQL: usa H2 en memo
 | `ProductoResponseTest` | Unitaria | 3 | Mapeo entidad -> DTO, incluidos valores nulos |
 | `PageResponseTest` | Unitaria | 3 | Mapeo de paginas de Spring Data |
 | `OpenApiConfigTest` | Unitaria | 1 | Metadatos de la documentacion OpenAPI |
-| `SpaControllerTest` | Unitaria | 1 | Redireccion de rutas del SPA al `index.html` |
+| `SpaControllerTest` | Unitaria | 2 | Redireccion de rutas del SPA al `index.html` |
+| `JwtServiceTest` | Unitaria | 4 | Generacion, extraccion, expiracion y firma invalida de access tokens |
 | `DemoApplicationTest` | Smoke test | 1 | Carga del contexto de Spring |
 
 ### Pruebas destacadas
@@ -446,9 +474,9 @@ La suite del backend incluye **112 pruebas** y no requiere MySQL: usa H2 en memo
 | `AuthApiIntegrationTest` | `usuarioNormalPuedeConsultarPeroNoEscribir` | `USER` recibe 403 al escribir |
 | `AuthApiIntegrationTest` | `adminPuedeEscribirProductos` | `ADMIN` puede escribir |
 | `AuthApiIntegrationTest` | `endpointsDeProductosRequierenAutenticacion` | Proteccion de rutas |
-| `CompraApiIntegrationTest` | `compraDescuentaStockYRegistraElHistorial` | Checkout real y persistencia del pedido |
-| `CompraApiIntegrationTest` | `compraSinStockNoModificaElInventario` | Transaccion y respuesta 409 |
-| `CompraApiIntegrationTest` | `carritoVacioDevuelve400` | Validacion del carrito |
+| `CompraApiIntegrationTest` | `usuarioCompraYSeDescuentaElStock` | Checkout real y persistencia del pedido |
+| `CompraApiIntegrationTest` | `compraSinStockDevuelve409YNoModificaElProducto` | Transaccion y respuesta 409 |
+| `CompraApiIntegrationTest` | `compraVaciaDevuelve400` | Validacion del carrito |
 | `CompraApiIntegrationTest` | `devolucionTotalReponeElInventarioYCambiaElEstado` | Devolucion total y reposicion de stock |
 | `CompraApiIntegrationTest` | `devolucionParcialReponeSoloLasUnidadesDevueltas` | Devoluciones parciales acumuladas |
 | `CompraApiIntegrationTest` | `noSePuedeDevolverUnaCompraDeOtroUsuario` | Aislamiento de devoluciones por usuario |
@@ -458,7 +486,8 @@ La suite del backend incluye **112 pruebas** y no requiere MySQL: usa H2 en memo
 | `ProductoControllerTest` | `listarUsaValoresPorDefectoCuandoNoSeEnvianParametros` | Valores por defecto `page=0`, `size=10`, `sort=id`, `direction=asc` |
 | `ProductoRepositoryTest` | `eliminaUnProductoExistente` | Borrado persistente |
 | `GlobalExceptionHandlerTest` | `errorInesperadoDevuelve500` | Respuesta `ProblemDetail` para errores no controlados |
-| `SpaControllerTest` | `redirigeLasRutasDelFrontendAlIndex` | Forward de rutas del SPA a `index.html` |
+| `SpaControllerTest` | `lasRutasDelFrontendSeReenvianAlIndex` | Forward de `/login`, `/productos/**`, `/carrito` y `/mis-compras` a `index.html` |
+| `JwtServiceTest` | `rechazaUnTokenFirmadoConOtraClave` | Que un token con firma ajena no sea aceptado |
 | `DemoApplicationTest` | `contextLoads` | La aplicacion arranca con el perfil `test` |
 
 ### Pruebas del frontend
@@ -531,7 +560,7 @@ La suite del backend incluye **112 pruebas** y no requiere MySQL: usa H2 en memo
 4. Verifica el resultado. Debe aparecer un resumen similar a:
 
    ```text
-   Tests run: 112, Failures: 0, Errors: 0, Skipped: 0
+    Tests run: 117, Failures: 0, Errors: 0, Skipped: 0
    BUILD SUCCESS
    ```
 
@@ -591,18 +620,21 @@ No necesitas MySQL: el perfil `test` (`src/test/resources/application-test.yaml`
 
 ### Ejecucion automatica en GitHub Actions
 
-El workflow `.github/workflows/ci.yml` se ejecuta en cada `push` y `pull request`:
+El workflow `.github/workflows/ci.yml` se ejecuta en cada `push` y `pull request`, con permisos de solo lectura, cancelacion de ejecuciones anticipadas y tiempos limite por job:
 
 1. Descarga el codigo del repositorio.
-2. **Job `pruebas`**: configura Java 21 (Temurin) con cache de Maven, ejecuta `mvn -B verify` con las 112 pruebas y valida la cobertura, y publica `target/site/jacoco` como artefacto descargable.
-3. **Job `frontend`**: configura Node 24 con cache de npm, ejecuta `npm ci`, `npm run test:ci` con las 57 pruebas de Vitest y compila con `npm run build`.
+2. **Job `pruebas`**: configura Java 21 (Temurin) con cache de Maven, ejecuta `mvn -B clean verify` con las 117 pruebas y valida la cobertura, y publica `target/site/jacoco` como artefacto descargable.
+3. **Job `frontend`**: configura Node 24 con cache de npm, ejecuta `npm ci`, `npm run format:check`, `npm run test:ci` con las 57 pruebas de Vitest y compila con `npm run build`.
+4. **Job `compose`**: valida la sintaxis de `docker-compose.yml` con `docker compose config --quiet`.
+5. `.github/dependabot.yml` propone actualizaciones semanales de Maven, npm y GitHub Actions.
 
 Para verlo, sube el proyecto a GitHub y abre la pestana **Actions** del repositorio. Para reproducir la ejecucion localmente:
 
 ```bash
-mvn -B verify
+mvn -B clean verify
 cd src/main/resources/frontend
 npm ci
+npm run format:check
 npm run test:ci
 npm run build
 ```

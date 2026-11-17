@@ -1,8 +1,5 @@
 ﻿import { provideHttpClient } from '@angular/common/http';
-import {
-  HttpTestingController,
-  provideHttpClientTesting,
-} from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { PageResponse, Producto } from '../models/producto.model';
 import { ProductoService } from './producto.service';
@@ -66,9 +63,7 @@ describe('ProductoService', () => {
   });
 
   it('no envia el parametro nombre cuando esta vacio', () => {
-    service
-      .listar({ page: 0, size: 10, sort: 'id', direction: 'asc', nombre: '   ' })
-      .subscribe();
+    service.listar({ page: 0, size: 10, sort: 'id', direction: 'asc', nombre: '   ' }).subscribe();
 
     const peticion = http.expectOne((request) => request.url === '/api/productos');
     expect(peticion.request.params.has('nombre')).toBe(false);
@@ -118,4 +113,3 @@ describe('ProductoService', () => {
     peticion.flush(null);
   });
 });
-

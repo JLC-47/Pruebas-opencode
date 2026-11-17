@@ -133,7 +133,7 @@ class GlobalExceptionHandlerTest {
         assertThat(problem.getStatus()).isEqualTo(HttpStatus.CONFLICT.value());
         assertThat(problem.getTitle()).isEqualTo("Conflicto de datos");
         assertThat(problem.getDetail()).isEqualTo(
-                "No fue posible guardar el producto por un conflicto con los datos existentes");
+                "No fue posible guardar los datos por un conflicto con la informacion existente");
         assertThat(problem.getProperties()).containsKey("timestamp");
     }
 

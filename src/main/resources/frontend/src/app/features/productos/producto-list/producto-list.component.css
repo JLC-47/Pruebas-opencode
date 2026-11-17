@@ -59,7 +59,9 @@
   border-radius: var(--radius);
   background: var(--color-surface);
   box-shadow: var(--shadow);
-  transition: transform 180ms ease, box-shadow 180ms ease;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
 }
 
 .product-card:hover {

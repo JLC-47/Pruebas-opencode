@@ -62,12 +62,7 @@ export class ProductoFormComponent implements OnInit {
     nombre: ['', [Validators.required, Validators.maxLength(120)]],
     precio: [
       0,
-      [
-        Validators.required,
-        Validators.min(0),
-        Validators.max(9999999999.99),
-        precioValido,
-      ],
+      [Validators.required, Validators.min(0), Validators.max(9999999999.99), precioValido],
     ],
     stock: [0, [Validators.required, Validators.min(0), stockEntero]],
     categoria: ['', [Validators.maxLength(60)]],
@@ -132,9 +127,10 @@ export class ProductoFormComponent implements OnInit {
     this.error.set(null);
 
     const request = this.form.getRawValue();
-    const operacion = this.editando() && this.productoId !== undefined
-      ? this.productoService.actualizar(this.productoId, request)
-      : this.productoService.crear(request);
+    const operacion =
+      this.editando() && this.productoId !== undefined
+        ? this.productoService.actualizar(this.productoId, request)
+        : this.productoService.crear(request);
 
     operacion
       .pipe(

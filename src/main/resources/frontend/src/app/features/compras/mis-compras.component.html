@@ -64,9 +64,7 @@
                 <span class="item-name">
                   {{ item.productoNombre }}
                   @if (item.cantidadDevuelta > 0) {
-                    <small class="returned">
-                      {{ item.cantidadDevuelta }} devuelta(s)
-                    </small>
+                    <small class="returned"> {{ item.cantidadDevuelta }} devuelta(s) </small>
                   }
                 </span>
                 <span class="muted">x{{ item.cantidad }}</span>
