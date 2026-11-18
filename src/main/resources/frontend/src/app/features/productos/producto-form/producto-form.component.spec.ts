@@ -1,7 +1,8 @@
-import { TestBed } from '@angular/core/testing';
+﻿import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { Producto } from '../../../core/models/producto.model';
+import { NotificationService } from '../../../core/services/notification.service';
 import { ProductoService } from '../../../core/services/producto.service';
 import { ProductoFormComponent } from './producto-form.component';
 
@@ -12,6 +13,7 @@ const producto: Producto = {
   stock: 10,
   categoria: 'Tecnologia',
   descripcion: 'Laptop de alto rendimiento',
+  imagenUrl: '',
 };
 
 async function configurar(id?: string) {
@@ -20,12 +22,18 @@ async function configurar(id?: string) {
     crear: vi.fn(() => of(producto)),
     actualizar: vi.fn(() => of(producto)),
   };
+  const notificationMock = {
+    exito: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+  };
 
   await TestBed.configureTestingModule({
     imports: [ProductoFormComponent],
     providers: [
       provideRouter([]),
       { provide: ProductoService, useValue: servicioMock },
+      { provide: NotificationService, useValue: notificationMock },
       {
         provide: ActivatedRoute,
         useValue: { snapshot: { paramMap: convertToParamMap(id ? { id } : {}) } },
@@ -38,6 +46,7 @@ async function configurar(id?: string) {
     fixture,
     componente: fixture.componentInstance,
     servicioMock,
+    notificationMock,
     router: TestBed.inject(Router),
   };
 }
@@ -53,6 +62,7 @@ describe('ProductoFormComponent', () => {
       stock: 1.5,
       categoria: '',
       descripcion: '',
+      imagenUrl: '',
     });
     componente.guardar();
     fixture.detectChanges();
@@ -64,8 +74,8 @@ describe('ProductoFormComponent', () => {
     );
   });
 
-  it('crea un producto valido y navega al listado', async () => {
-    const { fixture, componente, servicioMock, router } = await configurar();
+  it('crea un producto valido, notifica y navega al listado', async () => {
+    const { fixture, componente, servicioMock, notificationMock, router } = await configurar();
     const navegar = vi.spyOn(router, 'navigate').mockResolvedValue(true);
     fixture.detectChanges();
 
@@ -75,6 +85,7 @@ describe('ProductoFormComponent', () => {
       stock: 10,
       categoria: 'Tecnologia',
       descripcion: 'Laptop de alto rendimiento',
+      imagenUrl: '',
     });
     componente.guardar();
 
@@ -84,7 +95,12 @@ describe('ProductoFormComponent', () => {
       stock: 10,
       categoria: 'Tecnologia',
       descripcion: 'Laptop de alto rendimiento',
+      imagenUrl: '',
     });
+    expect(notificationMock.exito).toHaveBeenCalledWith(
+      'Producto creado',
+      expect.stringContaining('Laptop'),
+    );
     expect(navegar).toHaveBeenCalledWith(['/productos']);
   });
 
@@ -100,11 +116,12 @@ describe('ProductoFormComponent', () => {
       stock: 10,
       categoria: 'Tecnologia',
       descripcion: 'Laptop de alto rendimiento',
+      imagenUrl: '',
     });
   });
 
-  it('actualiza el producto en modo edicion', async () => {
-    const { fixture, componente, servicioMock, router } = await configurar('5');
+  it('actualiza el producto en modo edicion y notifica', async () => {
+    const { fixture, componente, servicioMock, notificationMock, router } = await configurar('5');
     const navegar = vi.spyOn(router, 'navigate').mockResolvedValue(true);
     fixture.detectChanges();
 
@@ -114,6 +131,7 @@ describe('ProductoFormComponent', () => {
       stock: 8,
       categoria: 'Tecnologia',
       descripcion: 'Version gamer',
+      imagenUrl: '',
     });
     componente.guardar();
 
@@ -123,7 +141,12 @@ describe('ProductoFormComponent', () => {
       stock: 8,
       categoria: 'Tecnologia',
       descripcion: 'Version gamer',
+      imagenUrl: '',
     });
+    expect(notificationMock.exito).toHaveBeenCalledWith(
+      'Producto actualizado',
+      expect.stringContaining('Laptop Gamer'),
+    );
     expect(navegar).toHaveBeenCalledWith(['/productos']);
   });
 });

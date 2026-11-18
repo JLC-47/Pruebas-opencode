@@ -117,4 +117,27 @@ describe('LoginComponent', () => {
       password: 'user123',
     });
   });
+
+  it('alterna la visibilidad de la contrasena', async () => {
+    const { fixture } = await configurar();
+    fixture.detectChanges();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    const input = raiz.querySelector<HTMLInputElement>('#login-password');
+    const boton = raiz.querySelector<HTMLButtonElement>('.password-toggle');
+
+    expect(input?.type).toBe('password');
+    expect(boton?.getAttribute('aria-label')).toBe('Mostrar contrasena');
+
+    boton?.click();
+    fixture.detectChanges();
+
+    expect(input?.type).toBe('text');
+    expect(boton?.getAttribute('aria-label')).toBe('Ocultar contrasena');
+
+    boton?.click();
+    fixture.detectChanges();
+
+    expect(input?.type).toBe('password');
+  });
 });

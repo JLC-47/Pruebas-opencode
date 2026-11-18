@@ -1,0 +1,19 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" role="img" aria-labelledby="titulo">
+  <title id="titulo">Deportes</title>
+  <defs>
+    <linearGradient id="fondo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7f1d1d"/>
+      <stop offset="1" stop-color="#ef4444"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="400" fill="url(#fondo)"/>
+  <circle cx="90" cy="320" r="140" fill="#ffffff" opacity="0.07"/>
+  <circle cx="560" cy="70" r="110" fill="#ffffff" opacity="0.08"/>
+  <g fill="#ffffff" opacity="0.92">
+    <rect x="180" y="180" width="34" height="90" rx="10"/>
+    <rect x="426" y="180" width="34" height="90" rx="10"/>
+    <rect x="130" y="196" width="30" height="58" rx="8"/>
+    <rect x="480" y="196" width="30" height="58" rx="8"/>
+    <rect x="214" y="212" width="212" height="26" rx="13"/>
+  </g>
+</svg>

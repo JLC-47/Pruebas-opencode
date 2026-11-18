@@ -4,6 +4,8 @@ import { signal } from '@angular/core';
 import { of, throwError } from 'rxjs';
 import { Compra } from '../../core/models/compra.model';
 import { CartService, ItemCarrito } from '../../core/services/cart.service';
+import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
+import { NotificationService } from '../../core/services/notification.service';
 import { CarritoComponent } from './carrito.component';
 
 const items: ItemCarrito[] = [
@@ -37,19 +39,43 @@ function crearCartMock() {
     vacio: signal(false),
     cambiarCantidad: vi.fn(),
     quitar: vi.fn(),
+    limpiar: vi.fn(),
     comprar: vi.fn(() => of(compra)),
+  };
+}
+
+async function configurar(cartMock = crearCartMock()) {
+  const confirmDialogMock = {
+    confirmar: vi.fn(() => Promise.resolve(true)),
+  };
+  const notificationMock = {
+    exito: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+  };
+
+  await TestBed.configureTestingModule({
+    imports: [CarritoComponent],
+    providers: [
+      provideRouter([]),
+      { provide: CartService, useValue: cartMock },
+      { provide: ConfirmDialogService, useValue: confirmDialogMock },
+      { provide: NotificationService, useValue: notificationMock },
+    ],
+  }).compileComponents();
+
+  return {
+    fixture: TestBed.createComponent(CarritoComponent),
+    cartMock,
+    confirmDialogMock,
+    notificationMock,
+    router: TestBed.inject(Router),
   };
 }
 
 describe('CarritoComponent', () => {
   it('muestra los productos y permite ajustar cantidades', async () => {
-    const cartMock = crearCartMock();
-    await TestBed.configureTestingModule({
-      imports: [CarritoComponent],
-      providers: [provideRouter([]), { provide: CartService, useValue: cartMock }],
-    }).compileComponents();
-
-    const fixture = TestBed.createComponent(CarritoComponent);
+    const { fixture, cartMock } = await configurar();
     fixture.detectChanges();
 
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
@@ -67,21 +93,18 @@ describe('CarritoComponent', () => {
     expect(cartMock.quitar).toHaveBeenCalledWith(1);
   });
 
-  it('finaliza la compra y navega al historial', async () => {
-    const cartMock = crearCartMock();
-    await TestBed.configureTestingModule({
-      imports: [CarritoComponent],
-      providers: [provideRouter([]), { provide: CartService, useValue: cartMock }],
-    }).compileComponents();
-
-    const fixture = TestBed.createComponent(CarritoComponent);
-    const router = TestBed.inject(Router);
+  it('finaliza la compra, notifica y navega al historial', async () => {
+    const { fixture, cartMock, notificationMock, router } = await configurar();
     const navegar = vi.spyOn(router, 'navigate').mockResolvedValue(true);
     fixture.detectChanges();
 
     fixture.componentInstance.comprar();
 
     expect(cartMock.comprar).toHaveBeenCalled();
+    expect(notificationMock.exito).toHaveBeenCalledWith(
+      'Compra confirmada',
+      expect.stringContaining('#7'),
+    );
     expect(navegar).toHaveBeenCalledWith(['/mis-compras'], {
       queryParams: { compra: 7 },
     });
@@ -90,12 +113,7 @@ describe('CarritoComponent', () => {
   it('muestra el error cuando el checkout falla', async () => {
     const cartMock = crearCartMock();
     cartMock.comprar.mockReturnValue(throwError(() => new Error('Stock insuficiente')));
-    await TestBed.configureTestingModule({
-      imports: [CarritoComponent],
-      providers: [provideRouter([]), { provide: CartService, useValue: cartMock }],
-    }).compileComponents();
-
-    const fixture = TestBed.createComponent(CarritoComponent);
+    const { fixture } = await configurar(cartMock);
     fixture.detectChanges();
 
     fixture.componentInstance.comprar();
@@ -107,14 +125,40 @@ describe('CarritoComponent', () => {
   it('muestra el estado vacio', async () => {
     const cartMock = crearCartMock();
     cartMock.vacio.set(true);
-    await TestBed.configureTestingModule({
-      imports: [CarritoComponent],
-      providers: [provideRouter([]), { provide: CartService, useValue: cartMock }],
-    }).compileComponents();
-
-    const fixture = TestBed.createComponent(CarritoComponent);
+    const { fixture } = await configurar(cartMock);
     fixture.detectChanges();
 
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Tu carrito esta vacio');
+  });
+
+  it('vacia el carrito cuando se confirma el dialogo', async () => {
+    const { fixture, cartMock, confirmDialogMock, notificationMock } = await configurar();
+    fixture.detectChanges();
+
+    await fixture.componentInstance.vaciar();
+
+    expect(confirmDialogMock.confirmar).toHaveBeenCalledWith(
+      expect.objectContaining({
+        titulo: 'Vaciar carrito',
+        etiquetaConfirmar: 'Vaciar carrito',
+        peligro: true,
+      }),
+    );
+    expect(cartMock.limpiar).toHaveBeenCalled();
+    expect(notificationMock.info).toHaveBeenCalledWith(
+      'Carrito vaciado',
+      expect.stringContaining('se limpio'),
+    );
+  });
+
+  it('mantiene el carrito cuando se cancela el dialogo', async () => {
+    const { fixture, cartMock, confirmDialogMock, notificationMock } = await configurar();
+    confirmDialogMock.confirmar.mockResolvedValue(false);
+    fixture.detectChanges();
+
+    await fixture.componentInstance.vaciar();
+
+    expect(cartMock.limpiar).not.toHaveBeenCalled();
+    expect(notificationMock.info).not.toHaveBeenCalled();
   });
 });

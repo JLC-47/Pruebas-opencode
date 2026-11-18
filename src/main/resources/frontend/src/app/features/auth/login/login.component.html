@@ -65,19 +65,59 @@
           }
         </label>
 
-        <label class="field">
-          <span>Contrasena</span>
-          <input
-            class="input"
-            type="password"
-            formControlName="password"
-            autocomplete="current-password"
-            placeholder="Tu contrasena"
-          />
+        <div class="field">
+          <label for="login-password">Contrasena</label>
+          <div class="password-control">
+            <input
+              id="login-password"
+              class="input"
+              [type]="mostrarPassword() ? 'text' : 'password'"
+              formControlName="password"
+              autocomplete="current-password"
+              placeholder="Tu contrasena"
+            />
+            <button
+              class="password-toggle"
+              type="button"
+              [attr.aria-label]="mostrarPassword() ? 'Ocultar contrasena' : 'Mostrar contrasena'"
+              [attr.aria-pressed]="mostrarPassword()"
+              (click)="alternarPassword()"
+            >
+              @if (mostrarPassword()) {
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="m2 2 20 20" />
+                  <path d="M6.71 6.71C3.9 8.37 2 12 2 12s3.5 7 10 7c2.42 0 4.5-.98 6.1-2.29" />
+                  <path d="M9.9 9.9A3 3 0 0 0 14.1 14.1" />
+                  <path d="M14.12 5.3A10.4 10.4 0 0 1 22 12s-3.5 7-10 7c-.7 0-1.38-.08-2.02-.23" />
+                </svg>
+              } @else {
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              }
+            </button>
+          </div>
           @if (form.controls.password.touched && form.controls.password.invalid) {
             <small class="error-text">La contrasena es obligatoria.</small>
           }
-        </label>
+        </div>
 
         <button class="btn btn-primary login-submit" type="submit" [disabled]="cargando()">
           {{ cargando() ? 'Ingresando...' : 'Ingresar' }}
@@ -86,6 +126,10 @@
 
       <p class="muted login-note">
         Usa una cuenta de demostracion para explorar el flujo completo de compra.
+      </p>
+      <p class="muted login-note">
+        No tienes cuenta?
+        <a routerLink="/registro">Registrate como cliente</a>
       </p>
     </div>
   </div>

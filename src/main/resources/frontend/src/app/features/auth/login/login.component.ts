@@ -26,6 +26,11 @@ export class LoginComponent {
 
   readonly cargando = signal(false);
   readonly error = signal<string | null>(null);
+  readonly mostrarPassword = signal(false);
+
+  alternarPassword(): void {
+    this.mostrarPassword.update((visible) => !visible);
+  }
 
   iniciarSesion(): void {
     if (this.form.invalid) {

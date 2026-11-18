@@ -9,6 +9,8 @@ import {
   ItemDevolucionRequest,
 } from '../../core/models/compra.model';
 import { CompraService } from '../../core/services/compra.service';
+import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
+import { NotificationService } from '../../core/services/notification.service';
 
 @Component({
   selector: 'app-mis-compras',
@@ -19,12 +21,13 @@ import { CompraService } from '../../core/services/compra.service';
 })
 export class MisComprasComponent implements OnInit {
   private readonly compraService = inject(CompraService);
+  private readonly confirmDialog = inject(ConfirmDialogService);
+  private readonly notification = inject(NotificationService);
   private readonly route = inject(ActivatedRoute);
 
   readonly compras = signal<Compra[]>([]);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
-  readonly mensaje = signal<string | null>(null);
   readonly compraConfirmada = signal<number | null>(null);
   readonly devolviendo = signal<number | null>(null);
 
@@ -74,24 +77,28 @@ export class MisComprasComponent implements OnInit {
     }
   }
 
-  devolverItem(compra: Compra, item: CompraItem): void {
+  async devolverItem(compra: Compra, item: CompraItem): Promise<void> {
     const cantidad = this.pendientes(item);
     if (cantidad <= 0) {
       return;
     }
 
-    if (
-      !window.confirm(
-        `Devolver ${cantidad} unidad(es) de "${item.productoNombre}"? El inventario se actualizara.`,
-      )
-    ) {
+    const confirmado = await this.confirmDialog.confirmar({
+      titulo: 'Devolver producto',
+      mensaje: `Devolveras ${cantidad} unidad(es) de "${item.productoNombre}".`,
+      detalle: 'El stock se actualizara y la devolucion quedara registrada en el pedido.',
+      etiquetaConfirmar: 'Registrar devolucion',
+      etiquetaCancelar: 'Cancelar',
+    });
+
+    if (!confirmado) {
       return;
     }
 
     this.enviarDevolucion(compra.id, [{ productoId: item.productoId, cantidad }]);
   }
 
-  devolverTodo(compra: Compra): void {
+  async devolverTodo(compra: Compra): Promise<void> {
     const items: ItemDevolucionRequest[] = compra.items
       .filter((item) => this.pendientes(item) > 0)
       .map((item) => ({
@@ -103,9 +110,15 @@ export class MisComprasComponent implements OnInit {
       return;
     }
 
-    if (
-      !window.confirm(`Devolver el pedido #${compra.id} completo? El inventario se actualizara.`)
-    ) {
+    const confirmado = await this.confirmDialog.confirmar({
+      titulo: 'Devolver pedido completo',
+      mensaje: `Se devolveran todas las unidades pendientes del pedido #${compra.id}.`,
+      detalle: 'El inventario se actualizara y el pedido quedara marcado como devuelto.',
+      etiquetaConfirmar: 'Devolver pedido',
+      etiquetaCancelar: 'Cancelar',
+    });
+
+    if (!confirmado) {
       return;
     }
 
@@ -119,7 +132,6 @@ export class MisComprasComponent implements OnInit {
 
     this.devolviendo.set(compraId);
     this.error.set(null);
-    this.mensaje.set(null);
 
     this.compraService
       .devolver(compraId, { items })
@@ -129,8 +141,9 @@ export class MisComprasComponent implements OnInit {
           this.compras.update((compras) =>
             compras.map((compra) => (compra.id === actualizada.id ? actualizada : compra)),
           );
-          this.mensaje.set(
-            `Devolucion del pedido #${actualizada.id} registrada. El inventario fue repuesto.`,
+          this.notification.exito(
+            'Devolucion registrada',
+            `El pedido #${actualizada.id} se actualizo y el inventario fue repuesto.`,
           );
         },
         error: (error: Error) => this.error.set(error.message),

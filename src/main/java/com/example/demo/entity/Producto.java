@@ -40,7 +40,20 @@ public class Producto {
     @Column(length = 300)
     private String descripcion;
 
+    @Column(length = 500)
+    private String imagenUrl;
+
     public Producto(Long id, String nombre, BigDecimal precio, Integer stock) {
-        this(id, nombre, precio, stock, null, null);
+        this(id, nombre, precio, stock, null, null, null);
+    }
+
+    public Producto(
+            Long id,
+            String nombre,
+            BigDecimal precio,
+            Integer stock,
+            String categoria,
+            String descripcion) {
+        this(id, nombre, precio, stock, categoria, descripcion, null);
     }
 }

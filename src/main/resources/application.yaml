@@ -3,9 +3,9 @@ spring:
     name: productos-api
 
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3306/pruebas_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true}
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:root}
+    url: jdbc:mysql://localhost:3306/pruebas_db
+    username: root
+    password: 
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
@@ -36,6 +36,9 @@ app:
     secret: ${JWT_SECRET:Y2xhdmUtc3VwZXItc2VndXJhLXBhcmEtZGVzYXJyb2xsby1sb2NhbC0yMDI2LXByb2R1Y3Rvcy1hcGk=}
     access-token-minutes: ${JWT_ACCESS_TOKEN_MINUTES:20}
     refresh-token-days: ${JWT_REFRESH_TOKEN_DAYS:7}
+    issuer: ${JWT_ISSUER:productos-api}
+    audience: ${JWT_AUDIENCE:productos-web}
+    clock-skew-seconds: ${JWT_CLOCK_SKEW_SECONDS:30}
   seed:
     enabled: ${APP_SEED_ENABLED:false}
     admin:

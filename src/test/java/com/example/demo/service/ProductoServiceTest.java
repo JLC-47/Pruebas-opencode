@@ -234,6 +234,32 @@ class ProductoServiceTest {
         assertThat(resultado.id()).isEqualTo(1L);
         assertThat(resultado.nombre()).isEqualTo("Laptop");
         assertThat(resultado.precio()).isEqualByComparingTo("2500000.00");
+        assertThat(resultado.imagenUrl()).isEqualTo("/img/productos/general.svg");
+    }
+
+    @Test
+    void crearAsignaLaImagenPorDefectoDeLaCategoria() {
+        when(repository.save(any(Producto.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ProductoResponse resultado = service.crear(new ProductoRequest(
+                "Laptop", new BigDecimal("2500000.00"), 10, "Tecnologia", null, null));
+
+        assertThat(resultado.imagenUrl()).isEqualTo("/img/productos/tecnologia.svg");
+    }
+
+    @Test
+    void crearRespetaLaImagenPersonalizada() {
+        when(repository.save(any(Producto.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ProductoResponse resultado = service.crear(new ProductoRequest(
+                "Laptop",
+                new BigDecimal("2500000.00"),
+                10,
+                "Tecnologia",
+                null,
+                "/img/productos/mi-laptop.svg"));
+
+        assertThat(resultado.imagenUrl()).isEqualTo("/img/productos/mi-laptop.svg");
     }
 
     @Test

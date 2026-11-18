@@ -125,6 +125,20 @@ class ProductoRequestValidationTest {
     }
 
     @Test
+    void imagenUrlDeMasDe500CaracteresEsInvalida() {
+        Set<ConstraintViolation<ProductoRequest>> violaciones = validar(
+                new ProductoRequest(
+                        "Laptop",
+                        new BigDecimal("100.00"),
+                        1,
+                        null,
+                        null,
+                        "/" + "a".repeat(500)));
+
+        assertThat(camposInvalidos(violaciones)).containsExactly("imagenUrl");
+    }
+
+    @Test
     void variosCamposInvalidosReportanTodasLasViolaciones() {
         Set<ConstraintViolation<ProductoRequest>> violaciones = validar(
                 new ProductoRequest("   ", null, null));

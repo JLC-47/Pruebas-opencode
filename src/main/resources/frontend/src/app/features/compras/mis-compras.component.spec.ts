@@ -3,6 +3,8 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import { of, throwError } from 'rxjs';
 import { Compra } from '../../core/models/compra.model';
 import { CompraService } from '../../core/services/compra.service';
+import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
+import { NotificationService } from '../../core/services/notification.service';
 import { MisComprasComponent } from './mis-compras.component';
 
 const compra: Compra = {
@@ -47,12 +49,22 @@ async function configurar(
       opciones.error ? throwError(() => opciones.error) : of(opciones.devolucion ?? compra),
     ),
   };
+  const confirmDialogMock = {
+    confirmar: vi.fn(() => Promise.resolve(true)),
+  };
+  const notificationMock = {
+    exito: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+  };
 
   await TestBed.configureTestingModule({
     imports: [MisComprasComponent],
     providers: [
       provideRouter([]),
       { provide: CompraService, useValue: compraMock },
+      { provide: ConfirmDialogService, useValue: confirmDialogMock },
+      { provide: NotificationService, useValue: notificationMock },
       {
         provide: ActivatedRoute,
         useValue: {
@@ -67,7 +79,13 @@ async function configurar(
   }).compileComponents();
 
   const fixture = TestBed.createComponent(MisComprasComponent);
-  return { fixture, componente: fixture.componentInstance, compraMock };
+  return {
+    fixture,
+    componente: fixture.componentInstance,
+    compraMock,
+    confirmDialogMock,
+    notificationMock,
+  };
 }
 
 describe('MisComprasComponent', () => {
@@ -105,21 +123,30 @@ describe('MisComprasComponent', () => {
       totalDevuelto: 2500000,
       items: [{ ...compra.items[0], cantidadDevuelta: 1 }, compra.items[1]],
     };
-    const { fixture, componente, compraMock } = await configurar({
-      compras: [compra],
-      devolucion: devuelta,
-    });
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const { fixture, componente, compraMock, confirmDialogMock, notificationMock } =
+      await configurar({
+        compras: [compra],
+        devolucion: devuelta,
+      });
     fixture.detectChanges();
 
-    componente.devolverItem(compra, compra.items[0]);
+    await componente.devolverItem(compra, compra.items[0]);
     fixture.detectChanges();
 
+    expect(confirmDialogMock.confirmar).toHaveBeenCalledWith(
+      expect.objectContaining({
+        titulo: 'Devolver producto',
+        etiquetaConfirmar: 'Registrar devolucion',
+      }),
+    );
     expect(compraMock.devolver).toHaveBeenCalledWith(15, {
       items: [{ productoId: 1, cantidad: 2 }],
     });
     expect(componente.compras()[0].estado).toBe('DEVUELTA_PARCIAL');
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('inventario fue repuesto');
+    expect(notificationMock.exito).toHaveBeenCalledWith(
+      'Devolucion registrada',
+      expect.stringContaining('#15'),
+    );
   });
 
   it('devuelve todo el pedido y solo envia las unidades pendientes', async () => {
@@ -129,28 +156,33 @@ describe('MisComprasComponent', () => {
       totalDevuelto: 45000,
       items: [compra.items[0], { ...compra.items[1], cantidadDevuelta: 1 }],
     };
-    const { fixture, componente, compraMock } = await configurar({
+    const { fixture, componente, compraMock, confirmDialogMock } = await configurar({
       compras: [parcial],
     });
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
     fixture.detectChanges();
 
-    componente.devolverTodo(parcial);
+    await componente.devolverTodo(parcial);
 
+    expect(confirmDialogMock.confirmar).toHaveBeenCalledWith(
+      expect.objectContaining({
+        titulo: 'Devolver pedido completo',
+        etiquetaConfirmar: 'Devolver pedido',
+      }),
+    );
     expect(compraMock.devolver).toHaveBeenCalledWith(15, {
       items: [{ productoId: 1, cantidad: 2 }],
     });
   });
 
   it('no devuelve nada si el usuario cancela la confirmacion', async () => {
-    const { fixture, componente, compraMock } = await configurar({
+    const { fixture, componente, compraMock, confirmDialogMock } = await configurar({
       compras: [compra],
     });
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    confirmDialogMock.confirmar.mockResolvedValue(false);
     fixture.detectChanges();
 
-    componente.devolverItem(compra, compra.items[0]);
-    componente.devolverTodo(compra);
+    await componente.devolverItem(compra, compra.items[0]);
+    await componente.devolverTodo(compra);
 
     expect(compraMock.devolver).not.toHaveBeenCalled();
   });

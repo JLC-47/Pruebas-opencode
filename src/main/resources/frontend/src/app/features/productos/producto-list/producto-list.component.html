@@ -17,6 +17,8 @@
       placeholder="Buscar por nombre..."
       [value]="busqueda()"
       (input)="onBusqueda($any($event.target).value)"
+      (change)="recordarBusqueda($any($event.target).value)"
+      (keydown.enter)="recordarBusqueda($any($event.target).value)"
     />
 
     <div class="sort-group">
@@ -44,9 +46,41 @@
     </select>
   </div>
 
-  @if (aviso(); as mensaje) {
-    <div class="alert" [class.alert-error]="mensaje.error" [class.alert-success]="!mensaje.error">
-      {{ mensaje.texto }}
+  @if (busquedasRecientes().length > 0) {
+    <div class="search-history" aria-label="Busquedas recientes">
+      <span class="history-label">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 7v5l3 2" />
+        </svg>
+        Recientes
+      </span>
+      @for (termino of busquedasRecientes(); track termino) {
+        <span class="history-chip">
+          <button class="history-term" type="button" (click)="usarBusqueda(termino)">
+            {{ termino }}
+          </button>
+          <button
+            class="history-remove"
+            type="button"
+            [attr.aria-label]="'Quitar ' + termino + ' del historial'"
+            (click)="olvidarBusqueda(termino, $event)"
+          >
+            ×
+          </button>
+        </span>
+      }
+      <button class="history-clear" type="button" (click)="limpiarHistorial()">
+        Limpiar historial
+      </button>
     </div>
   }
 
@@ -66,7 +100,13 @@
       @for (producto of productos(); track producto.id) {
         <article class="product-card">
           <div [class]="'product-visual cat-' + categoriaSlug(producto)">
-            <span class="product-initial">{{ inicial(producto) }}</span>
+            <img
+              class="product-image"
+              [src]="imagen(producto)"
+              [alt]="producto.nombre"
+              loading="lazy"
+              (error)="imagenFallback($event)"
+            />
             <span class="product-category">{{ categoria(producto) }}</span>
             <span
               class="stock-pill"

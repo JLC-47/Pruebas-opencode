@@ -54,6 +54,14 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
+    @ExceptionHandler(UsuarioYaExisteException.class)
+    public ProblemDetail handleUsuarioYaExiste(UsuarioYaExisteException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Usuario ya registrado");
+        problem.setProperty("timestamp", Instant.now().toString());
+        return problem;
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ProblemDetail handleValidationErrors(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new LinkedHashMap<>();

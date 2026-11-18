@@ -1,14 +1,17 @@
 package com.example.demo;
 
 import com.example.demo.entity.RefreshToken;
+import com.example.demo.entity.Usuario;
 import com.example.demo.repository.ProductoRepository;
 import com.example.demo.repository.RefreshTokenRepository;
+import com.example.demo.repository.UsuarioRepository;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -36,6 +39,12 @@ class AuthApiIntegrationTest {
     @Autowired
     private ProductoRepository productoRepository;
 
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     @BeforeEach
     void limpiarDatos() {
         refreshTokenRepository.deleteAll();
@@ -61,6 +70,61 @@ class AuthApiIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.usuario.username").value("user"))
                 .andExpect(jsonPath("$.usuario.roles[0]").value("USER"));
+    }
+
+    @Test
+    void registroCreaUnClienteConRolUserYDevuelveTokens() throws Exception {
+        mockMvc.perform(registro("cliente_nuevo", "claveSegura123"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.tokenType").value("Bearer"))
+                .andExpect(jsonPath("$.accessToken").isNotEmpty())
+                .andExpect(jsonPath("$.refreshToken").isNotEmpty())
+                .andExpect(jsonPath("$.usuario.username").value("cliente_nuevo"))
+                .andExpect(jsonPath("$.usuario.roles[0]").value("USER"));
+
+        Usuario usuario = usuarioRepository.findByUsername("cliente_nuevo").orElseThrow();
+        assertThat(usuario.getPassword()).isNotEqualTo("claveSegura123");
+        assertThat(passwordEncoder.matches("claveSegura123", usuario.getPassword())).isTrue();
+
+        mockMvc.perform(login("cliente_nuevo", "claveSegura123"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.usuario.username").value("cliente_nuevo"));
+    }
+
+    @Test
+    void registroNoPermiteElegirElRolAdmin() throws Exception {
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "username": "cliente_con_rol",
+                                  "password": "claveSegura123",
+                                  "rol": "ADMIN"
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.usuario.roles[0]").value("USER"));
+    }
+
+    @Test
+    void registroDuplicadoDevuelve409() throws Exception {
+        mockMvc.perform(registro("cliente_duplicado", "claveSegura123"))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(registro("cliente_duplicado", "otraClave123"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.title").value("Usuario ya registrado"))
+                .andExpect(jsonPath("$.detail").value(
+                        "El usuario 'cliente_duplicado' ya esta registrado"));
+    }
+
+    @Test
+    void registroConDatosInvalidosDevuelve400() throws Exception {
+        mockMvc.perform(registro("ab", "corta"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Error de validacion"))
+                .andExpect(jsonPath("$.errors.username").exists())
+                .andExpect(jsonPath("$.errors.password").exists());
     }
 
     @Test
@@ -208,6 +272,18 @@ class AuthApiIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.components.securitySchemes.bearerAuth.type").value("http"))
                 .andExpect(jsonPath("$.components.securitySchemes.bearerAuth.scheme").value("bearer"));
+    }
+
+    private org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder registro(
+            String username, String password) {
+        return post("/api/auth/register")
+                .contentType("application/json")
+                .content("""
+                        {
+                          "username": "%s",
+                          "password": "%s"
+                        }
+                        """.formatted(username, password));
     }
 
     private org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder login(

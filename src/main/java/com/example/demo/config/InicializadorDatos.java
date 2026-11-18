@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Locale;
 
 @Slf4j
 @Component
@@ -53,7 +54,7 @@ public class InicializadorDatos implements ApplicationRunner {
             return;
         }
 
-        productoRepository.saveAll(List.of(
+        List<Producto> productos = List.of(
                 new Producto(null, "Laptop Pro 14", new BigDecimal("4299000.00"), 12, "Tecnologia",
                         "Portatil ultraligero con pantalla 2.8K, 16 GB de RAM y 512 GB SSD."),
                 new Producto(null, "Mouse Inalambrico Ergo", new BigDecimal("129900.00"), 38, "Tecnologia",
@@ -90,7 +91,13 @@ public class InicializadorDatos implements ApplicationRunner {
                         "Soporte ajustable de aluminio que mejora la postura y la ventilacion."),
                 new Producto(null, "Organizador de Escritorio", new BigDecimal("69900.00"), 52, "Accesorios",
                         "Bandejas modulares para mantener cables, notas y accesorios en orden.")
-        ));
+        );
+
+        productos.forEach(producto ->
+                producto.setImagenUrl(
+                        "/img/productos/" + producto.getCategoria().toLowerCase(Locale.ROOT) + ".svg"));
+
+        productoRepository.saveAll(productos);
         log.info("Catalogo inicial de productos creado");
     }
 

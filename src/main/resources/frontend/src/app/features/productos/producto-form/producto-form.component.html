@@ -57,13 +57,33 @@
 
       <label class="field">
         <span>Categoria</span>
-        <select class="input" formControlName="categoria">
+        <select class="input" formControlName="categoria" (change)="sugerirImagen()">
           <option value="">Sin categoria</option>
           @for (categoria of categorias; track categoria) {
             <option [value]="categoria">{{ categoria }}</option>
           }
         </select>
       </label>
+
+      <label class="field">
+        <span>Imagen (URL)</span>
+        <input
+          class="input"
+          type="text"
+          formControlName="imagenUrl"
+          maxlength="500"
+          placeholder="/img/productos/tecnologia.svg"
+        />
+        <small class="muted">Si la dejas vacia se usa la imagen de la categoria.</small>
+        @if (form.controls.imagenUrl.touched && form.controls.imagenUrl.invalid) {
+          <small class="error-text">La URL de la imagen admite hasta 500 caracteres.</small>
+        }
+      </label>
+
+      <div class="image-preview-box">
+        <img class="image-preview" [src]="imagenPrevia()" [alt]="form.controls.nombre.value" />
+        <span class="muted">Vista previa</span>
+      </div>
 
       <label class="field">
         <span>Descripcion</span>

@@ -28,10 +28,13 @@ public record ProductoRequest(
         String categoria,
 
         @Size(max = 300, message = "La descripcion no puede superar los 300 caracteres")
-        String descripcion
+        String descripcion,
+
+        @Size(max = 500, message = "La URL de la imagen no puede superar los 500 caracteres")
+        String imagenUrl
 ) {
 
     public ProductoRequest(String nombre, BigDecimal precio, Integer stock) {
-        this(nombre, precio, stock, null, null);
+        this(nombre, precio, stock, null, null, null);
     }
 }

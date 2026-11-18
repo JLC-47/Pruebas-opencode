@@ -13,6 +13,9 @@ import { Subject, debounceTime, distinctUntilChanged, finalize } from 'rxjs';
 import { Producto } from '../../../core/models/producto.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { CartService } from '../../../core/services/cart.service';
+import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
+import { HistorialBusquedaService } from '../../../core/services/historial-busqueda.service';
+import { NotificationService } from '../../../core/services/notification.service';
 import { ProductoService } from '../../../core/services/producto.service';
 
 @Component({
@@ -26,15 +29,18 @@ export class ProductoListComponent implements OnInit {
   private readonly productoService = inject(ProductoService);
   private readonly auth = inject(AuthService);
   private readonly cart = inject(CartService);
+  private readonly notification = inject(NotificationService);
+  private readonly confirmDialog = inject(ConfirmDialogService);
+  private readonly historial = inject(HistorialBusquedaService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly busqueda$ = new Subject<string>();
 
   readonly esAdmin = this.auth.esAdmin;
+  readonly busquedasRecientes = this.historial.terminos;
 
   readonly productos = signal<Producto[]>([]);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
-  readonly aviso = signal<{ texto: string; error: boolean } | null>(null);
   readonly page = signal(0);
   readonly size = signal(12);
   readonly totalElements = signal(0);
@@ -45,20 +51,13 @@ export class ProductoListComponent implements OnInit {
   readonly direction = signal<'asc' | 'desc'>('asc');
   readonly busqueda = signal('');
 
-  private avisoTimer?: ReturnType<typeof setTimeout>;
-
-  constructor() {
-    this.destroyRef.onDestroy(() => {
-      if (this.avisoTimer) {
-        clearTimeout(this.avisoTimer);
-      }
-    });
-  }
-
   ngOnInit(): void {
     this.busqueda$
       .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
       .subscribe((texto) => {
+        if (texto === this.busqueda()) {
+          return;
+        }
         this.busqueda.set(texto);
         this.page.set(0);
         this.cargar();
@@ -102,6 +101,31 @@ export class ProductoListComponent implements OnInit {
     this.busqueda$.next(texto);
   }
 
+  recordarBusqueda(texto: string): void {
+    this.historial.registrar(texto);
+  }
+
+  usarBusqueda(termino: string): void {
+    this.busqueda$.next(termino);
+    this.busqueda.set(termino);
+    this.historial.registrar(termino);
+    this.page.set(0);
+    this.cargar();
+  }
+
+  olvidarBusqueda(termino: string, event: Event): void {
+    event.stopPropagation();
+    this.historial.quitar(termino);
+  }
+
+  limpiarHistorial(): void {
+    if (this.busquedasRecientes().length === 0) {
+      return;
+    }
+    this.historial.limpiar();
+    this.notification.info('Historial limpio', 'Ya no veras busquedas recientes en el catalogo.');
+  }
+
   cambiarTamano(valor: string): void {
     this.size.set(Number(valor));
     this.page.set(0);
@@ -133,20 +157,35 @@ export class ProductoListComponent implements OnInit {
 
   agregar(producto: Producto): void {
     if (producto.stock <= 0) {
-      this.mostrarAviso('Este producto esta agotado', true);
+      this.notification.error(
+        'Producto agotado',
+        'Este producto no tiene unidades disponibles por ahora.',
+      );
       return;
     }
 
     if (this.cart.agregar(producto)) {
-      this.mostrarAviso(`${producto.nombre} se agrego al carrito`);
+      this.notification.exito('Agregado al carrito', `${producto.nombre} te espera en tu pedido.`);
       return;
     }
 
-    this.mostrarAviso(`No puedes agregar mas unidades de ${producto.nombre}`, true);
+    this.notification.error(
+      'Limite alcanzado',
+      `No puedes agregar mas unidades de ${producto.nombre}.`,
+    );
   }
 
-  eliminar(producto: Producto): void {
-    if (!window.confirm(`Eliminar el producto "${producto.nombre}"?`)) {
+  async eliminar(producto: Producto): Promise<void> {
+    const confirmado = await this.confirmDialog.confirmar({
+      titulo: 'Eliminar producto',
+      mensaje: `Vas a eliminar "${producto.nombre}" del catalogo.`,
+      detalle: 'Esta accion no se puede deshacer y el producto dejara de estar disponible.',
+      etiquetaConfirmar: 'Eliminar producto',
+      etiquetaCancelar: 'Conservar',
+      peligro: true,
+    });
+
+    if (!confirmado) {
       return;
     }
 
@@ -158,14 +197,28 @@ export class ProductoListComponent implements OnInit {
           if (this.productos().length === 1 && this.page() > 0) {
             this.page.update((page) => page - 1);
           }
+          this.notification.exito(
+            'Producto eliminado',
+            `"${producto.nombre}" ya no esta disponible en el catalogo.`,
+          );
           this.cargar();
         },
-        error: (error: Error) => this.error.set(error.message),
+        error: (error: Error) => {
+          this.error.set(error.message);
+          this.notification.error('No se pudo eliminar el producto', error.message);
+        },
       });
   }
 
-  inicial(producto: Producto): string {
-    return producto.nombre.charAt(0).toUpperCase();
+  imagen(producto: Producto): string {
+    return producto.imagenUrl?.trim() || `/img/productos/${this.categoriaSlug(producto)}.svg`;
+  }
+
+  imagenFallback(event: Event): void {
+    const imagen = event.target as HTMLImageElement;
+    if (!imagen.src.endsWith('/img/productos/general.svg')) {
+      imagen.src = '/img/productos/general.svg';
+    }
   }
 
   categoria(producto: Producto): string {
@@ -188,13 +241,5 @@ export class ProductoListComponent implements OnInit {
       return `Ultimas ${producto.stock} unidades`;
     }
     return `${producto.stock} disponibles`;
-  }
-
-  private mostrarAviso(texto: string, error = false): void {
-    if (this.avisoTimer) {
-      clearTimeout(this.avisoTimer);
-    }
-    this.aviso.set({ texto, error });
-    this.avisoTimer = setTimeout(() => this.aviso.set(null), 2600);
   }
 }

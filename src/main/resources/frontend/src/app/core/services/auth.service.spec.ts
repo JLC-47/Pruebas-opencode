@@ -65,6 +65,28 @@ describe('AuthService', () => {
     expect(localStorage.getItem(STORAGE_KEY)).toContain('access-1');
   });
 
+  it('registra un cliente y guarda la sesion devuelta', () => {
+    let resultado: unknown;
+
+    servicio
+      .registrar({ username: 'nuevo.cliente', password: 'claveSegura123' })
+      .subscribe((sesion) => (resultado = sesion));
+
+    const peticion = http.expectOne('/api/auth/register');
+    expect(peticion.request.method).toBe('POST');
+    expect(peticion.request.body).toEqual({
+      username: 'nuevo.cliente',
+      password: 'claveSegura123',
+    });
+    peticion.flush(respuesta);
+
+    expect(servicio.autenticado()).toBe(true);
+    expect(servicio.usuario()?.username).toBe('admin');
+    expect(servicio.accessToken()).toBe('access-1');
+    expect(resultado).toBeTruthy();
+    expect(localStorage.getItem(STORAGE_KEY)).toContain('access-1');
+  });
+
   it('recupera la sesion guardada en localStorage', () => {
     localStorage.setItem(
       STORAGE_KEY,

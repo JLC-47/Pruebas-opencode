@@ -1,17 +1,21 @@
 package com.example.demo.service;
 
 import com.example.demo.dto.LoginRequest;
+import com.example.demo.dto.RegistroRequest;
 import com.example.demo.dto.TokenResponse;
 import com.example.demo.dto.UsuarioResponse;
 import com.example.demo.entity.RefreshToken;
+import com.example.demo.entity.Rol;
 import com.example.demo.entity.Usuario;
 import com.example.demo.exception.TokenInvalidoException;
+import com.example.demo.exception.UsuarioYaExisteException;
 import com.example.demo.repository.RefreshTokenRepository;
 import com.example.demo.repository.UsuarioRepository;
 import com.example.demo.security.JwtService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +36,7 @@ public class AuthService {
     private final UsuarioRepository usuarioRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtService jwtService;
+    private final PasswordEncoder passwordEncoder;
     private final long refreshTokenDays;
     private final SecureRandom secureRandom = new SecureRandom();
 
@@ -40,20 +45,42 @@ public class AuthService {
             UsuarioRepository usuarioRepository,
             RefreshTokenRepository refreshTokenRepository,
             JwtService jwtService,
+            PasswordEncoder passwordEncoder,
             @Value("${app.jwt.refresh-token-days:7}") long refreshTokenDays) {
         this.authenticationManager = authenticationManager;
         this.usuarioRepository = usuarioRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.jwtService = jwtService;
+        this.passwordEncoder = passwordEncoder;
         this.refreshTokenDays = refreshTokenDays;
     }
 
     @Transactional
-    public TokenResponse login(LoginRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.username(), request.password()));
+    public TokenResponse registrar(RegistroRequest request) {
+        String username = request.username().trim();
 
-        Usuario usuario = usuarioRepository.findByUsername(request.username())
+        if (usuarioRepository.existsByUsername(username)) {
+            throw new UsuarioYaExisteException("El usuario '" + username + "' ya esta registrado");
+        }
+
+        Usuario usuario = new Usuario(
+                null,
+                username,
+                passwordEncoder.encode(request.password()),
+                Rol.USER,
+                true);
+
+        return generarRespuesta(usuarioRepository.save(usuario));
+    }
+
+    @Transactional
+    public TokenResponse login(LoginRequest request) {
+        String username = request.username().trim();
+
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(username, request.password()));
+
+        Usuario usuario = usuarioRepository.findByUsername(username)
                 .orElseThrow(() -> new TokenInvalidoException("No fue posible iniciar sesion"));
 
         return generarRespuesta(usuario);

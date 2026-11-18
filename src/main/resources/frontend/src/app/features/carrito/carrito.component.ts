@@ -3,6 +3,8 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { ItemCarrito, CartService } from '../../core/services/cart.service';
+import { ConfirmDialogService } from '../../core/services/confirm-dialog.service';
+import { NotificationService } from '../../core/services/notification.service';
 
 @Component({
   selector: 'app-carrito',
@@ -13,6 +15,8 @@ import { ItemCarrito, CartService } from '../../core/services/cart.service';
 })
 export class CarritoComponent {
   readonly cart = inject(CartService);
+  private readonly confirmDialog = inject(ConfirmDialogService);
+  private readonly notification = inject(NotificationService);
   private readonly router = inject(Router);
 
   readonly enviando = signal(false);
@@ -30,13 +34,29 @@ export class CarritoComponent {
     this.cart.quitar(item.producto.id);
   }
 
-  vaciar(): void {
+  async vaciar(): Promise<void> {
     if (this.cart.vacio()) {
       return;
     }
-    if (window.confirm('Vaciar el carrito de compras?')) {
-      this.cart.limpiar();
+
+    const confirmado = await this.confirmDialog.confirmar({
+      titulo: 'Vaciar carrito',
+      mensaje: 'Quitaremos todos los productos de tu seleccion.',
+      detalle: 'Esta accion no afecta tu historial de compras.',
+      etiquetaConfirmar: 'Vaciar carrito',
+      etiquetaCancelar: 'Mantener productos',
+      peligro: true,
+    });
+
+    if (!confirmado) {
+      return;
     }
+
+    this.cart.limpiar();
+    this.notification.info(
+      'Carrito vaciado',
+      'Tu seleccion se limpio. Puedes seguir explorando el catalogo.',
+    );
   }
 
   comprar(): void {
@@ -51,10 +71,15 @@ export class CarritoComponent {
       .comprar()
       .pipe(finalize(() => this.enviando.set(false)))
       .subscribe({
-        next: (compra) =>
+        next: (compra) => {
+          this.notification.exito(
+            'Compra confirmada',
+            `Tu pedido #${compra.id} se registro correctamente.`,
+          );
           this.router.navigate(['/mis-compras'], {
             queryParams: { compra: compra.id },
-          }),
+          });
+        },
         error: (error: Error) => this.error.set(error.message),
       });
   }

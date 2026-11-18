@@ -5,6 +5,7 @@ export interface Producto {
   stock: number;
   categoria?: string;
   descripcion?: string;
+  imagenUrl?: string;
 }
 
 export interface ProductoRequest {
@@ -13,6 +14,7 @@ export interface ProductoRequest {
   stock: number;
   categoria?: string;
   descripcion?: string;
+  imagenUrl?: string;
 }
 
 export interface PageResponse<T> {

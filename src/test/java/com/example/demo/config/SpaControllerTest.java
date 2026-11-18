@@ -31,6 +31,7 @@ class SpaControllerTest {
         for (String ruta : new String[] {
             "/",
             "/login",
+            "/registro",
             "/productos",
             "/productos/nuevo",
             "/productos/5/editar",

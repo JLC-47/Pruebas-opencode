@@ -17,6 +17,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
+import { NotificationService } from '../../../core/services/notification.service';
 import { ProductoService } from '../../../core/services/producto.service';
 
 const precioValido: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
@@ -52,11 +53,12 @@ const stockEntero: ValidatorFn = (control: AbstractControl): ValidationErrors | 
 export class ProductoFormComponent implements OnInit {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly productoService = inject(ProductoService);
+  private readonly notification = inject(NotificationService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly categorias = ['Tecnologia', 'Hogar', 'Oficina', 'Accesorios'];
+  readonly categorias = ['Tecnologia', 'Hogar', 'Oficina', 'Accesorios', 'Deportes'];
 
   readonly form = this.fb.group({
     nombre: ['', [Validators.required, Validators.maxLength(120)]],
@@ -67,6 +69,7 @@ export class ProductoFormComponent implements OnInit {
     stock: [0, [Validators.required, Validators.min(0), stockEntero]],
     categoria: ['', [Validators.maxLength(60)]],
     descripcion: ['', [Validators.maxLength(300)]],
+    imagenUrl: ['', [Validators.maxLength(500)]],
   });
 
   readonly editando = signal(false);
@@ -111,10 +114,39 @@ export class ProductoFormComponent implements OnInit {
             stock: producto.stock,
             categoria: producto.categoria ?? '',
             descripcion: producto.descripcion ?? '',
+            imagenUrl: producto.imagenUrl ?? '',
           });
         },
         error: (error: Error) => this.error.set(error.message),
       });
+  }
+
+  sugerirImagen(): void {
+    if (this.form.controls.imagenUrl.value.trim()) {
+      return;
+    }
+    this.form.controls.imagenUrl.setValue(
+      this.imagenPorCategoria(this.form.controls.categoria.value),
+    );
+  }
+
+  imagenPrevia(): string {
+    return (
+      this.form.controls.imagenUrl.value.trim() ||
+      this.imagenPorCategoria(this.form.controls.categoria.value)
+    );
+  }
+
+  private imagenPorCategoria(categoria: string): string {
+    const slug =
+      categoria
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '') || 'general';
+
+    return `/img/productos/${slug}.svg`;
   }
 
   guardar(): void {
@@ -138,7 +170,15 @@ export class ProductoFormComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: () => this.router.navigate(['/productos']),
+        next: () => {
+          this.notification.exito(
+            this.editando() ? 'Producto actualizado' : 'Producto creado',
+            this.editando()
+              ? `"${request.nombre}" se actualizo correctamente.`
+              : `"${request.nombre}" ya forma parte del catalogo.`,
+          );
+          this.router.navigate(['/productos']);
+        },
         error: (error: Error) => this.error.set(error.message),
       });
   }

@@ -1,7 +1,13 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Observable, catchError, finalize, map, shareReplay, throwError } from 'rxjs';
-import { LoginRequest, Sesion, TokenResponse, UsuarioSesion } from '../models/auth.model';
+import {
+  LoginRequest,
+  RegistroRequest,
+  Sesion,
+  TokenResponse,
+  UsuarioSesion,
+} from '../models/auth.model';
 
 const STORAGE_KEY = 'productos.auth.session';
 const RENOVACION_ANTICIPADA_MS = 60_000;
@@ -30,6 +36,12 @@ export class AuthService {
   iniciarSesion(request: LoginRequest): Observable<Sesion> {
     return this.http
       .post<TokenResponse>('/api/auth/login', request)
+      .pipe(map((respuesta) => this.guardarSesion(respuesta)));
+  }
+
+  registrar(request: RegistroRequest): Observable<Sesion> {
+    return this.http
+      .post<TokenResponse>('/api/auth/register', request)
       .pipe(map((respuesta) => this.guardarSesion(respuesta)));
   }
 

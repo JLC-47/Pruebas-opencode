@@ -2,10 +2,20 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { CartService } from './core/services/cart.service';
 import { AuthService } from './core/services/auth.service';
+import { ConfirmDialogComponent } from './shared/confirm-dialog/confirm-dialog.component';
+import { LoadingOverlayComponent } from './shared/loading-overlay/loading-overlay.component';
+import { NotificationCenterComponent } from './shared/notification-center/notification-center.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    LoadingOverlayComponent,
+    NotificationCenterComponent,
+    ConfirmDialogComponent,
+  ],
   templateUrl: './app.html',
   styleUrl: './app.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

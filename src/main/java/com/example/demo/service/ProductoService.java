@@ -15,6 +15,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.Normalizer;
+import java.util.Locale;
 import java.util.Set;
 
 @Service
@@ -87,14 +89,35 @@ public class ProductoService {
     }
 
     private void aplicarDatos(Producto producto, ProductoRequest request) {
+        String categoria = normalizar(request.categoria());
+
         producto.setNombre(request.nombre().trim());
         producto.setPrecio(request.precio());
         producto.setStock(request.stock());
-        producto.setCategoria(normalizar(request.categoria()));
+        producto.setCategoria(categoria);
         producto.setDescripcion(normalizar(request.descripcion()));
+        producto.setImagenUrl(imagenValida(request.imagenUrl(), categoria));
     }
 
     private String normalizar(String valor) {
         return valor == null || valor.isBlank() ? null : valor.trim();
+    }
+
+    private String imagenValida(String imagenUrl, String categoria) {
+        String imagen = normalizar(imagenUrl);
+        if (imagen != null) {
+            return imagen;
+        }
+
+        String nombreCategoria = categoria == null ? "general" : categoria;
+        return "/img/productos/" + slug(nombreCategoria) + ".svg";
+    }
+
+    private String slug(String valor) {
+        return Normalizer.normalize(valor, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("(^-|-$)", "");
     }
 }

@@ -2,12 +2,14 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.LoginRequest;
 import com.example.demo.dto.RefreshTokenRequest;
+import com.example.demo.dto.RegistroRequest;
 import com.example.demo.dto.TokenResponse;
 import com.example.demo.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -21,6 +23,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+
+    @Operation(summary = "Registra un cliente nuevo y devuelve sus tokens de acceso")
+    @PostMapping("/register")
+    public ResponseEntity<TokenResponse> registrar(@Valid @RequestBody RegistroRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(authService.registrar(request));
+    }
 
     @Operation(summary = "Inicia sesion y devuelve los tokens de acceso y renovacion")
     @PostMapping("/login")

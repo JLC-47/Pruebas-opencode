@@ -1,6 +1,6 @@
 # Productos API
 
-Aplicacion web de catalogo y compras construida con Spring Boot y Angular. Incluye paginacion, busqueda, validacion de datos, autenticacion JWT con roles, carrito de compras, checkout con descuento transaccional de stock, historial de pedidos, devoluciones parciales o totales que reponen el inventario, manejo centralizado de errores, documentacion OpenAPI, pruebas automatizadas con cobertura y una coleccion de Postman lista para ejecutar.
+Aplicacion web de catalogo y compras construida con Spring Boot y Angular. Incluye paginacion, busqueda, validacion de datos, autenticacion JWT con roles, registro de clientes, carrito de compras, checkout con descuento transaccional de stock, historial de pedidos, devoluciones parciales o totales que reponen el inventario, manejo centralizado de errores, notificaciones y confirmaciones elegantes, historial de busquedas, documentacion OpenAPI, pruebas automatizadas con cobertura y una coleccion de Postman lista para ejecutar.
 
 ## Tecnologias
 
@@ -33,7 +33,7 @@ src/main/java/com/example/demo
   service/      Logica de negocio, autenticacion y compras
 src/main/resources/frontend
   src/app/core/       Modelos, servicios, guards e interceptor
-  src/app/features/   Productos, carrito, compras y login
+  src/app/features/   Productos, carrito, compras, login y registro
   src/app/shared/     Componentes compartidos (404)
   src/app/app.routes.ts  Rutas con lazy loading y guards
   proxy.conf.json     Proxy de desarrollo hacia Spring Boot
@@ -202,6 +202,7 @@ La API usa JWT stateless. El login devuelve un access token de 20 minutos y un r
 | Metodo | Ruta | Descripcion | Respuestas |
 | --- | --- | --- | --- |
 | POST | `/api/auth/login` | Inicia sesion con `username` y `password` | 200, 400, 401 |
+| POST | `/api/auth/register` | Registra un cliente con rol `USER` | 201, 400, 409 |
 | POST | `/api/auth/refresh` | Renueva la sesion con `refreshToken` | 200, 400, 401 |
 | POST | `/api/auth/logout` | Revoca el refresh token | 204, 400, 401 |
 
@@ -232,6 +233,20 @@ Content-Type: application/json
 }
 ```
 
+Ejemplo de registro:
+
+```http
+POST /api/auth/register
+Content-Type: application/json
+
+{
+  "username": "nuevo.cliente",
+  "password": "claveSegura123"
+}
+```
+
+El registro siempre asigna el rol `USER`; no es posible elegir `ADMIN` desde el cliente. Si el usuario ya existe responde `409 Conflict`. La pantalla `/registro` inicia sesion automaticamente al crear la cuenta y permite mostrar u ocultar la contrasena con el boton del ojo.
+
 Envia el access token en las rutas protegidas:
 
 ```http
@@ -246,7 +261,7 @@ Authorization: Bearer <accessToken>
 | `GET /api/productos/**` | Si | Si | No |
 | `POST`, `PUT`, `DELETE /api/productos/**` | No | Si | No |
 | `GET`, `POST /api/compras` y `/api/compras/{id}/devoluciones` | Si | Si | No |
-| `/api/auth/login`, `/refresh`, `/logout` | - | - | Si |
+| `/api/auth/login`, `/register`, `/refresh`, `/logout` | - | - | Si |
 | `/actuator/health`, `/actuator/info` | - | - | Si |
 | `/v3/api-docs/**`, `/swagger-ui/**` | - | - | Si |
 
@@ -269,6 +284,7 @@ El frontend vive en `src/main/resources/frontend` y se sirve desde el mismo Spri
 | --- | --- | --- |
 | `/` | Redireccion | Redirige a `/productos` |
 | `/login` | `LoginComponent` | Publico |
+| `/registro` | `RegistroComponent` | Publico |
 | `/productos` | `ProductoListComponent` | `authGuard` (USER o ADMIN) |
 | `/carrito` | `CarritoComponent` | `authGuard` (USER o ADMIN) |
 | `/mis-compras` | `MisComprasComponent` | `authGuard` (USER o ADMIN) |
@@ -277,6 +293,20 @@ El frontend vive en `src/main/resources/frontend` y se sirve desde el mismo Spri
 | `**` | `NotFoundComponent` | Publico |
 
 La sesion se guarda en `localStorage`, se restaura al recargar y se renueva automaticamente 60 segundos antes de expirar. Si el refresh falla, se limpia la sesion y se redirige a `/login` conservando la URL original en `returnUrl`.
+
+Todas las peticiones HTTP muestran una capa de carga global con anillos orbitales, barra de progreso y mensaje animado. `LoadingService` mantiene la animacion visible al menos **3 segundos** (`DURACION_MINIMA_CARGA_MS`), espera a que terminen las peticiones concurrentes y permite cambiar ese tiempo en un solo lugar. La interfaz respeta `prefers-reduced-motion` para reducir las animaciones.
+
+### Mensajes y confirmaciones
+
+Las acciones de la aplicacion comunican su resultado con notificaciones flotantes administradas por `NotificationService` y renderizadas por `NotificationCenterComponent`. Existen variantes de exito, error e informacion, con icono, barra de progreso, cierre manual y auto-cierre. Se usan al agregar productos al carrito, crear o actualizar productos, confirmar compras, vaciar el carrito y registrar devoluciones.
+
+Las acciones delicadas usan `ConfirmDialogService` y `ConfirmDialogComponent` en lugar de `window.confirm`. El dialogo es accesible, se cierra con `Escape` o pulsando el fondo, distingue visualmente las acciones peligrosas y devuelve una `Promise<boolean>`. La eliminacion de un producto pide confirmacion con el nombre del producto, advierte que la accion no se puede deshacer y muestra una notificacion al completarse. La capa de carga queda en `z-index: 9000`, el dialogo en `9800` y las notificaciones en `10000` para mantener el orden visual correcto.
+
+### Historial de busquedas
+
+`HistorialBusquedaService` conserva las ultimas **8 busquedas** del catalogo en `localStorage`, bajo la clave `productos.busquedas`. Los terminos se guardan al confirmar el buscador con `Enter` o al salir del campo, se normalizan, se deduplican sin distinguir mayusculas y se ordenan del mas reciente al mas antiguo. Se ignoran las busquedas vacias o de una sola letra.
+
+La fila **Recientes** permite reutilizar un termino con un clic, quitar una busqueda concreta o limpiar todo el historial; al limpiarlo se muestra una notificacion informativa. El historial de compras y devoluciones sigue disponible en **Mis compras**, por lo que no se duplica en el catalogo.
 
 ### Desarrollo
 
@@ -293,7 +323,7 @@ npm run build
 
 El resultado se escribe directamente en `src/main/resources/static`. Luego inicia la aplicacion con `mvn spring-boot:run` y abre `http://localhost:8080`.
 
-Las rutas profundas como `/productos/5/editar`, `/carrito` y `/login` se redirigen a `index.html` mediante `SpaController`, y Angular resuelve la vista. La carpeta `static` es un artefacto de build: esta en `.gitignore` y se regenera con `npm run build` o en el CI.
+Las rutas profundas como `/productos/5/editar`, `/carrito`, `/login` y `/registro` se redirigen a `index.html` mediante `SpaController`, y Angular resuelve la vista. La carpeta `static` es un artefacto de build: esta en `.gitignore` y se regenera con `npm run build` o en el CI.
 
 ## Carrito y compras
 
@@ -324,6 +354,7 @@ La respuesta es la compra actualizada con `estado`, `totalDevuelto` y `cantidadD
 | Metodo | Ruta | Descripcion | Acceso | Respuestas |
 | --- | --- | --- | --- | --- |
 | POST | `/api/auth/login` | Inicia sesion | Publico | 200, 400, 401 |
+| POST | `/api/auth/register` | Registra un cliente con rol USER | Publico | 201, 400, 409 |
 | POST | `/api/auth/refresh` | Renueva la sesion | Publico | 200, 400, 401 |
 | POST | `/api/auth/logout` | Revoca el refresh token | Publico | 204, 400, 401 |
 | GET | `/api/productos` | Lista paginada con busqueda por nombre | USER/ADMIN | 200, 400, 401 |
@@ -445,23 +476,32 @@ Con la aplicacion en ejecucion:
 
 ## Pruebas automatizadas
 
-La suite del backend incluye **117 pruebas** y no requiere MySQL: usa H2 en memoria con el perfil `test`. El frontend agrega **57 pruebas** con Vitest.
+La suite del backend incluye **131 pruebas** y no requiere MySQL: usa H2 en memoria con el perfil `test`. El frontend agrega **99 pruebas** con Vitest, distribuidas en 20 archivos.
+
+Resultados de la ultima ejecucion local (`2026-11-18`):
+
+| Comando | Resultado |
+| --- | --- |
+| `mvn -B verify` | 131 pruebas, 0 fallos; umbral JaCoCo del 80 % cumplido |
+| `npm run test:ci` | 20 archivos, 99 pruebas aprobadas |
+| `npm run format:check` | Formato Prettier correcto |
+| `npm run build` | Build de Angular generado en `src/main/resources/static` |
 
 | Clase | Tipo | Pruebas | Que cubre |
 | --- | --- | ---: | --- |
-| `ProductoServiceTest` | Unitaria con Mockito | 18 | CRUD, paginacion, busqueda, ordenamiento y parametros invalidos |
+| `ProductoServiceTest` | Unitaria con Mockito | 20 | CRUD, paginacion, busqueda, ordenamiento, parametros invalidos e imagenes por categoria |
 | `ProductoControllerTest` | Web con MockMvc | 17 | Codigos HTTP, validacion, paginacion, errores y metadatos |
 | `ProductoApiIntegrationTest` | Integracion | 9 | Flujo CRUD autenticado, H2, paginacion, busqueda, health, OpenAPI y 404 |
-| `AuthApiIntegrationTest` | Integracion | 12 | Login, refresh con rotacion, logout, errores 401/403 y permisos por rol |
+| `AuthApiIntegrationTest` | Integracion | 16 | Login, registro con rol forzado, duplicados 409, refresh con rotacion, logout, errores 401/403 y permisos por rol |
 | `CompraApiIntegrationTest` | Integracion | 16 | Checkout, descuento y reposicion de stock, devoluciones parciales/totales, duplicados, historial, 400/404/409 y 401 |
 | `ProductoRepositoryTest` | Persistencia con `@DataJpaTest` | 6 | Guardado, actualizacion, borrado, busqueda y paginacion |
 | `GlobalExceptionHandlerTest` | Unitaria | 11 | Todos los `ProblemDetail` y errores de validacion |
-| `ProductoRequestValidationTest` | Unitaria (Bean Validation) | 14 | Reglas de nombre, precio y stock |
-| `ProductoResponseTest` | Unitaria | 3 | Mapeo entidad -> DTO, incluidos valores nulos |
+| `ProductoRequestValidationTest` | Unitaria (Bean Validation) | 15 | Reglas de nombre, precio, stock e `imagenUrl` |
+| `ProductoResponseTest` | Unitaria | 4 | Mapeo entidad -> DTO, incluidos valores nulos e imagen |
 | `PageResponseTest` | Unitaria | 3 | Mapeo de paginas de Spring Data |
 | `OpenApiConfigTest` | Unitaria | 1 | Metadatos de la documentacion OpenAPI |
-| `SpaControllerTest` | Unitaria | 2 | Redireccion de rutas del SPA al `index.html` |
-| `JwtServiceTest` | Unitaria | 4 | Generacion, extraccion, expiracion y firma invalida de access tokens |
+| `SpaControllerTest` | Unitaria | 2 | Redireccion de rutas del SPA, incluida `/registro`, al `index.html` |
+| `JwtServiceTest` | Unitaria | 10 | Generacion, `jti`, issuer/audiencia, expiracion, firma, secreto y extraccion de claims |
 | `DemoApplicationTest` | Smoke test | 1 | Carga del contexto de Spring |
 
 ### Pruebas destacadas
@@ -469,6 +509,10 @@ La suite del backend incluye **117 pruebas** y no requiere MySQL: usa H2 en memo
 | Clase | Prueba | Que valida |
 | --- | --- | --- |
 | `AuthApiIntegrationTest` | `loginDeAdminDevuelveTokensYRoles` | Login real y payload de tokens |
+| `AuthApiIntegrationTest` | `registroCreaUnClienteConRolUserYDevuelveTokens` | Alta real de cliente, BCrypt y auto-login |
+| `AuthApiIntegrationTest` | `registroNoPermiteElegirElRolAdmin` | El rol `ADMIN` enviado por el cliente se ignora |
+| `AuthApiIntegrationTest` | `registroDuplicadoDevuelve409` | Conflicto al repetir el nombre de usuario |
+| `AuthApiIntegrationTest` | `registroConDatosInvalidosDevuelve400` | Validacion del contrato de registro |
 | `AuthApiIntegrationTest` | `refreshRotaElTokenYRevocaElAnterior` | Rotacion y replay de refresh token |
 | `AuthApiIntegrationTest` | `logoutRevocaElRefreshToken` | Logout e invalidez posterior |
 | `AuthApiIntegrationTest` | `usuarioNormalPuedeConsultarPeroNoEscribir` | `USER` recibe 403 al escribir |
@@ -486,7 +530,7 @@ La suite del backend incluye **117 pruebas** y no requiere MySQL: usa H2 en memo
 | `ProductoControllerTest` | `listarUsaValoresPorDefectoCuandoNoSeEnvianParametros` | Valores por defecto `page=0`, `size=10`, `sort=id`, `direction=asc` |
 | `ProductoRepositoryTest` | `eliminaUnProductoExistente` | Borrado persistente |
 | `GlobalExceptionHandlerTest` | `errorInesperadoDevuelve500` | Respuesta `ProblemDetail` para errores no controlados |
-| `SpaControllerTest` | `lasRutasDelFrontendSeReenvianAlIndex` | Forward de `/login`, `/productos/**`, `/carrito` y `/mis-compras` a `index.html` |
+| `SpaControllerTest` | `lasRutasDelFrontendSeReenvianAlIndex` | Forward de `/login`, `/registro`, `/productos/**`, `/carrito` y `/mis-compras` a `index.html` |
 | `JwtServiceTest` | `rechazaUnTokenFirmadoConOtraClave` | Que un token con firma ajena no sea aceptado |
 | `DemoApplicationTest` | `contextLoads` | La aplicacion arranca con el perfil `test` |
 
@@ -495,15 +539,24 @@ La suite del backend incluye **117 pruebas** y no requiere MySQL: usa H2 en memo
 | Archivo | Pruebas | Que cubre |
 | --- | ---: | --- |
 | `producto.service.spec.ts` | 6 | Listado con filtros y paginacion, obtener, crear, actualizar y eliminar |
-| `auth.service.spec.ts` | 5 | Login, restauracion, refresh compartido, fallo de refresh y logout |
+| `auth.service.spec.ts` | 6 | Login, registro, restauracion, refresh compartido, fallo de refresh y logout |
 | `api.interceptor.spec.ts` | 6 | Cabeceras, bearer token, retry tras 401, refresh fallido y errores |
+| `loading.interceptor.spec.ts` | 2 | Muestra la animacion en cada peticion y la oculta al completar o fallar |
+| `loading.service.spec.ts` | 4 | Duracion minima de 3 segundos, concurrencia y reinicio de la espera |
+| `loading-overlay.component.spec.ts` | 2 | Render condicional y contenido de la animacion de carga |
+| `notification.service.spec.ts` | 3 | Alta de notificaciones, auto-cierre, cierre manual y temporizadores independientes |
+| `confirm-dialog.service.spec.ts` | 3 | Respuestas `Promise`, valores por defecto y cancelacion al abrir otro dialogo |
+| `notification-center.component.spec.ts` | 3 | Pila vacia, notificacion de exito, cierre manual y alertas accesibles |
+| `confirm-dialog.component.spec.ts` | 3 | Render condicional, accion peligrosa, botones y cierre con `Escape` |
+| `historial-busqueda.service.spec.ts` | 7 | Persistencia, limite de 8, deduplicacion, eliminacion, limpieza y datos corruptos |
 | `auth.guard.spec.ts` | 4 | Proteccion de rutas y redirecciones por rol |
-| `producto-list.component.spec.ts` | 6 | Carga, error, paginacion, ordenamiento, carrito y acciones solo para ADMIN |
-| `producto-form.component.spec.ts` | 4 | Validacion, creacion, categoria/descripcion, edicion y actualizacion |
+| `producto-list.component.spec.ts` | 12 | Carga, error, paginacion, ordenamiento, carrito, agotado, eliminacion confirmada/cancelada, historial y acciones solo para ADMIN |
+| `producto-form.component.spec.ts` | 4 | Validacion, creacion, notificaciones, edicion y actualizacion |
 | `cart.service.spec.ts` | 7 | Persistencia, limites de stock, quitar, vaciar y checkout |
-| `carrito.component.spec.ts` | 4 | Listado, cantidades, eliminacion y confirmacion de compra |
+| `carrito.component.spec.ts` | 6 | Listado, cantidades, eliminacion, compra notificada, vaciado confirmado/cancelado |
 | `mis-compras.component.spec.ts` | 6 | Historial, estado vacio, errores y devoluciones |
-| `login.component.spec.ts` | 5 | Validacion, login, `returnUrl`, error y credenciales demo |
+| `login.component.spec.ts` | 6 | Validacion, login, `returnUrl`, error, credenciales demo y visibilidad de contrasena |
+| `registro.component.spec.ts` | 5 | Validacion, contrasenas distintas, registro, usuario duplicado y visibilidad de contrasenas |
 | `app.spec.ts` | 4 | Shell, navegacion, sesion visible, badge del carrito y logout |
 
 ### Paso a paso para el frontend
@@ -560,7 +613,7 @@ La suite del backend incluye **117 pruebas** y no requiere MySQL: usa H2 en memo
 4. Verifica el resultado. Debe aparecer un resumen similar a:
 
    ```text
-    Tests run: 117, Failures: 0, Errors: 0, Skipped: 0
+    Tests run: 131, Failures: 0, Errors: 0, Skipped: 0
    BUILD SUCCESS
    ```
 
@@ -623,8 +676,8 @@ No necesitas MySQL: el perfil `test` (`src/test/resources/application-test.yaml`
 El workflow `.github/workflows/ci.yml` se ejecuta en cada `push` y `pull request`, con permisos de solo lectura, cancelacion de ejecuciones anticipadas y tiempos limite por job:
 
 1. Descarga el codigo del repositorio.
-2. **Job `pruebas`**: configura Java 21 (Temurin) con cache de Maven, ejecuta `mvn -B clean verify` con las 117 pruebas y valida la cobertura, y publica `target/site/jacoco` como artefacto descargable.
-3. **Job `frontend`**: configura Node 24 con cache de npm, ejecuta `npm ci`, `npm run format:check`, `npm run test:ci` con las 57 pruebas de Vitest y compila con `npm run build`.
+2. **Job `pruebas`**: configura Java 21 (Temurin) con cache de Maven, ejecuta `mvn -B clean verify` con las 131 pruebas y valida la cobertura, y publica `target/site/jacoco` como artefacto descargable.
+3. **Job `frontend`**: configura Node 24 con cache de npm, ejecuta `npm ci`, `npm run format:check`, `npm run test:ci` con las 99 pruebas de Vitest y compila con `npm run build`.
 4. **Job `compose`**: valida la sintaxis de `docker-compose.yml` con `docker compose config --quiet`.
 5. `.github/dependabot.yml` propone actualizaciones semanales de Maven, npm y GitHub Actions.
 

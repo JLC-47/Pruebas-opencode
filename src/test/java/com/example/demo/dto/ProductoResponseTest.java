@@ -34,6 +34,22 @@ class ProductoResponseTest {
     }
 
     @Test
+    void fromCopiaLaImagenDelProducto() {
+        Producto producto = new Producto(
+                4L,
+                "Camara Web",
+                new BigDecimal("219900.00"),
+                18,
+                "Tecnologia",
+                "Camara Full HD",
+                "/img/productos/tecnologia.svg");
+
+        ProductoResponse response = ProductoResponse.from(producto);
+
+        assertThat(response.imagenUrl()).isEqualTo("/img/productos/tecnologia.svg");
+    }
+
+    @Test
     void fromMantieneElIdNuloCuandoElProductoNoHaSidoGuardado() {
         Producto producto = new Producto(null, "Monitor", new BigDecimal("900000.00"), 5);
 

@@ -10,11 +10,12 @@ public record ProductoResponse(
         BigDecimal precio,
         Integer stock,
         String categoria,
-        String descripcion
+        String descripcion,
+        String imagenUrl
 ) {
 
     public ProductoResponse(Long id, String nombre, BigDecimal precio, Integer stock) {
-        this(id, nombre, precio, stock, null, null);
+        this(id, nombre, precio, stock, null, null, null);
     }
 
     public static ProductoResponse from(Producto producto) {
@@ -24,7 +25,8 @@ public record ProductoResponse(
                 producto.getPrecio(),
                 producto.getStock(),
                 producto.getCategoria(),
-                producto.getDescripcion()
+                producto.getDescripcion(),
+                producto.getImagenUrl()
         );
     }
 }

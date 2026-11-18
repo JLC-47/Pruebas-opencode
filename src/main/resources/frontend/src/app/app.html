@@ -36,6 +36,7 @@
         </button>
       } @else {
         <a class="btn btn-sm session-login" routerLink="/login">Iniciar sesion</a>
+        <a class="btn btn-sm" routerLink="/registro">Registrarse</a>
       }
     </div>
   </header>
@@ -51,4 +52,8 @@
       <a href="/actuator/health" target="_blank" rel="noopener">Estado de la API</a>
     </span>
   </footer>
+
+  <app-loading-overlay />
+  <app-notification-center />
+  <app-confirm-dialog />
 </div>

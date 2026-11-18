@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS productos (
   stock       INT            NOT NULL,
   categoria   VARCHAR(60)    NULL,
   descripcion VARCHAR(300)   NULL,
+  imagen_url  VARCHAR(500)   NULL,
   PRIMARY KEY (id),
   KEY idx_productos_nombre (nombre),
   CONSTRAINT chk_productos_precio CHECK (precio >= 0),
