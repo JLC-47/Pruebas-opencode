@@ -118,6 +118,24 @@ describe('LoginComponent', () => {
     });
   });
 
+  it('muestra el acceso rapido del vendedor y completa el formulario', async () => {
+    const { fixture, componente } = await configurar();
+    fixture.detectChanges();
+
+    const raiz = fixture.nativeElement as HTMLElement;
+    expect(raiz.querySelectorAll('.demo-user').length).toBe(3);
+
+    const botonVendedor = Array.from(
+      raiz.querySelectorAll<HTMLButtonElement>('.demo-user .btn'),
+    ).find((boton) => boton.textContent?.includes('vendedor'));
+    botonVendedor?.click();
+
+    expect(componente.form.getRawValue()).toEqual({
+      username: 'vendedor',
+      password: 'vendedor123',
+    });
+  });
+
   it('alterna la visibilidad de la contrasena', async () => {
     const { fixture } = await configurar();
     fixture.detectChanges();

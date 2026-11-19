@@ -37,4 +37,33 @@ public class Usuario {
 
     @Column(nullable = false)
     private boolean enabled = true;
+
+    @Column(length = 80)
+    private String nombre;
+
+    @Column(length = 300)
+    private String bio;
+
+    @Column(name = "avatar_url", length = 500)
+    private String avatarUrl;
+
+    @Column(length = 20)
+    private String tema = "claro";
+
+    @Column(length = 10)
+    private String idioma = "es";
+
+    @Column(name = "notificaciones_activas", nullable = false)
+    private boolean notificacionesActivas = true;
+
+    public Usuario(Long id, String username, String password, Rol rol, boolean enabled) {
+        this.id = id;
+        this.username = username;
+        this.password = password;
+        this.rol = rol;
+        this.enabled = enabled;
+        this.tema = "claro";
+        this.idioma = "es";
+        this.notificacionesActivas = true;
+    }
 }

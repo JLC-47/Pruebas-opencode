@@ -23,4 +23,21 @@ public interface CompraRepository extends JpaRepository<Compra, Long> {
     Optional<Compra> findByIdAndUsuarioUsernameForUpdate(
             @Param("id") Long id,
             @Param("username") String username);
+
+    @Query("""
+            select new com.example.demo.dto.VentaVendedorResponse(
+                d.compra.id,
+                d.compra.fecha,
+                d.compra.usuario.username,
+                d.productoNombre,
+                d.cantidad,
+                d.subtotal)
+            from DetalleCompra d
+            where d.productoId in (
+                select p.id from Producto p where p.vendedor.username = :username
+            )
+            order by d.compra.fecha desc
+            """)
+    List<com.example.demo.dto.VentaVendedorResponse> findVentasByVendedor(
+            @Param("username") String username);
 }

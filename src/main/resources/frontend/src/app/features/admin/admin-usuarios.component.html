@@ -1,0 +1,162 @@
+<section class="page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">Administracion</span>
+      <h1>Usuarios y roles</h1>
+      <p class="muted">Alta de cuentas, asignacion de permisos y activacion de usuarios.</p>
+    </div>
+    <a class="btn" routerLink="/productos">Volver al catalogo</a>
+  </header>
+
+  @if (error()) {
+    <div class="alert alert-error">{{ error() }}</div>
+  }
+
+  <div class="admin-layout">
+    <form class="card form" [formGroup]="crearForm" (ngSubmit)="crear()" novalidate>
+      <div>
+        <h2>Nuevo usuario</h2>
+        <p class="muted">Define el acceso inicial y el rol asignado.</p>
+      </div>
+
+      <label class="field">
+        <span>Usuario</span>
+        <input class="input" type="text" formControlName="username" maxlength="60" />
+        @if (crearForm.controls.username.touched && crearForm.controls.username.invalid) {
+          <small class="error-text">Entre 3 y 60 caracteres, sin espacios.</small>
+        }
+      </label>
+
+      <label class="field">
+        <span>Contrasena</span>
+        <input
+          class="input"
+          type="password"
+          formControlName="password"
+          autocomplete="new-password"
+        />
+        @if (crearForm.controls.password.touched && crearForm.controls.password.invalid) {
+          <small class="error-text">Entre 8 y 72 caracteres.</small>
+        }
+      </label>
+
+      <label class="field">
+        <span>Rol</span>
+        <select class="input" formControlName="rol">
+          @for (rol of rolesDisponibles; track rol) {
+            <option [value]="rol">{{ rol }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="checkbox">
+        <input type="checkbox" formControlName="enabled" />
+        <span>Cuenta activa</span>
+      </label>
+
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit" [disabled]="creando()">
+          {{ creando() ? 'Creando...' : 'Crear usuario' }}
+        </button>
+      </div>
+    </form>
+
+    <section class="card roles-card">
+      <h2>Perfiles de acceso</h2>
+      <p class="muted">Los permisos se aplican en todo el sistema.</p>
+      <ul class="roles-list">
+        @for (rol of roles(); track rol.nombre) {
+          <li>
+            <strong>{{ rol.nombre }}</strong>
+            <span>{{ rol.descripcion }}</span>
+            <small>{{ rol.permisos.join(' · ') }}</small>
+          </li>
+        } @empty {
+          <li class="muted">No hay roles disponibles.</li>
+        }
+      </ul>
+    </section>
+  </div>
+
+  <section class="page">
+    <h2>Cuentas registradas</h2>
+    @if (cargando()) {
+      <div class="state-box">Cargando usuarios...</div>
+    } @else {
+      <div class="table-wrapper">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Rol</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (usuario of usuarios(); track usuario.id) {
+              <tr>
+                <td>
+                  <strong>{{ usuario.username }}</strong>
+                  @if (usuario.nombre) {
+                    <small class="muted block">{{ usuario.nombre }}</small>
+                  }
+                </td>
+                <td>
+                  @if (editandoId() === usuario.id) {
+                    <select class="input input-sm" [formControl]="editarForm.controls.rol">
+                      @for (rol of rolesDisponibles; track rol) {
+                        <option [value]="rol">{{ rol }}</option>
+                      }
+                    </select>
+                  } @else {
+                    <span class="rol">{{ usuario.rol }}</span>
+                    <small class="muted block">{{ descripcionRol(usuario.rol) }}</small>
+                  }
+                </td>
+                <td>
+                  @if (editandoId() === usuario.id) {
+                    <label class="checkbox">
+                      <input type="checkbox" [formControl]="editarForm.controls.enabled" />
+                      <span>Activo</span>
+                    </label>
+                  } @else {
+                    <span [class.activo]="usuario.enabled" [class.inactivo]="!usuario.enabled">
+                      {{ usuario.enabled ? 'Activo' : 'Inactivo' }}
+                    </span>
+                  }
+                </td>
+                <td>
+                  @if (editandoId() === usuario.id) {
+                    <button
+                      class="btn btn-sm btn-primary"
+                      type="button"
+                      (click)="guardarEdicion(usuario)"
+                      [disabled]="guardando()"
+                    >
+                      Guardar
+                    </button>
+                    <button class="btn btn-sm" type="button" (click)="cancelarEdicion()">
+                      Cancelar
+                    </button>
+                  } @else {
+                    <button class="btn btn-sm" type="button" (click)="seleccionar(usuario)">
+                      Editar
+                    </button>
+                    <button class="btn btn-sm btn-danger" type="button" (click)="eliminar(usuario)">
+                      Eliminar
+                    </button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4" class="muted">No hay usuarios registrados.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</section>

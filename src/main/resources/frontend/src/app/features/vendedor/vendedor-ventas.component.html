@@ -1,0 +1,64 @@
+<section class="page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">Panel del vendedor</span>
+      <h1>Mis ventas</h1>
+      <p class="muted">Resumen de pedidos que incluyen productos de tu catalogo.</p>
+    </div>
+    <a class="btn" routerLink="/vendedor/productos">Volver a mis productos</a>
+  </header>
+
+  @if (error()) {
+    <div class="alert alert-error">{{ error() }}</div>
+  }
+
+  @if (cargando()) {
+    <div class="state-box">Calculando tus ventas...</div>
+  } @else if (resumen(); as datos) {
+    <div class="tarjetas">
+      <div class="card tarjeta">
+        <span class="muted">Total vendido</span>
+        <strong>{{ datos.totalVendido | currency: 'COP' : 'symbol' : '1.0-0' }}</strong>
+      </div>
+      <div class="card tarjeta">
+        <span class="muted">Unidades</span>
+        <strong>{{ datos.unidadesVendidas }}</strong>
+      </div>
+      <div class="card tarjeta">
+        <span class="muted">Pedidos</span>
+        <strong>{{ datos.pedidos }}</strong>
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Pedido</th>
+            <th>Comprador</th>
+            <th>Producto</th>
+            <th>Cantidad</th>
+            <th>Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (venta of datos.ventas; track venta.compraId) {
+            <tr>
+              <td>{{ venta.fecha | date: 'short' }}</td>
+              <td>#{{ venta.compraId }}</td>
+              <td>{{ venta.comprador }}</td>
+              <td>{{ venta.producto }}</td>
+              <td>{{ venta.cantidad }}</td>
+              <td>{{ venta.subtotal | currency: 'COP' : 'symbol' : '1.0-0' }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="muted">Aun no registras ventas.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

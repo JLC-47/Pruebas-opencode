@@ -2,9 +2,12 @@ package com.example.demo.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -43,6 +46,10 @@ public class Producto {
     @Column(length = 500)
     private String imagenUrl;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "vendedor_id")
+    private Usuario vendedor;
+
     public Producto(Long id, String nombre, BigDecimal precio, Integer stock) {
         this(id, nombre, precio, stock, null, null, null);
     }
@@ -54,6 +61,17 @@ public class Producto {
             Integer stock,
             String categoria,
             String descripcion) {
-        this(id, nombre, precio, stock, categoria, descripcion, null);
+        this(id, nombre, precio, stock, categoria, descripcion, null, null);
+    }
+
+    public Producto(
+            Long id,
+            String nombre,
+            BigDecimal precio,
+            Integer stock,
+            String categoria,
+            String descripcion,
+            String imagenUrl) {
+        this(id, nombre, precio, stock, categoria, descripcion, imagenUrl, null);
     }
 }

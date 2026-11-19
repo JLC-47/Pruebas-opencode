@@ -11,6 +11,13 @@
     <nav class="app-nav">
       <a routerLink="/productos" routerLinkActive="active">Productos</a>
       @if (auth.autenticado()) {
+        @if (auth.esAdmin() || auth.esVendedor()) {
+          <a routerLink="/vendedor/productos" routerLinkActive="active">Panel vendedor</a>
+        }
+        @if (auth.esAdmin()) {
+          <a routerLink="/admin/usuarios" routerLinkActive="active">Panel admin</a>
+        }
+        <a routerLink="/perfil" routerLinkActive="active">Mi perfil</a>
         <a routerLink="/carrito" routerLinkActive="active">
           Carrito
           @if (cart.cantidadTotal() > 0) {
@@ -24,13 +31,17 @@
 
     <div class="session">
       @if (auth.autenticado()) {
-        <span class="session-user">
-          <span class="avatar">{{ auth.usuario()?.username?.charAt(0)?.toUpperCase() }}</span>
+        <a class="session-user" routerLink="/perfil" aria-label="Abrir mi perfil">
+          @if (auth.usuario()?.avatarUrl) {
+            <img class="avatar avatar-image" [src]="auth.usuario()?.avatarUrl" alt="Avatar" />
+          } @else {
+            <span class="avatar">{{ auth.usuario()?.username?.charAt(0)?.toUpperCase() }}</span>
+          }
           <span class="session-name">
-            {{ auth.usuario()?.username }}
+            {{ auth.usuario()?.nombre || auth.usuario()?.username }}
             <span class="role-badge">{{ auth.roles().join(', ') }}</span>
           </span>
-        </span>
+        </a>
         <button class="btn btn-sm session-logout" type="button" (click)="cerrarSesion()">
           Salir
         </button>

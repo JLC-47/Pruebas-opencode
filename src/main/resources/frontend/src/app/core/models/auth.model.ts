@@ -2,6 +2,12 @@ export interface UsuarioSesion {
   id: number;
   username: string;
   roles: string[];
+  nombre?: string;
+  bio?: string;
+  avatarUrl?: string;
+  tema?: string;
+  idioma?: string;
+  notificacionesActivas?: boolean;
 }
 
 export interface LoginRequest {

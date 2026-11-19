@@ -7,12 +7,13 @@ import {
   provideRouter,
 } from '@angular/router';
 import { AuthService } from '../services/auth.service';
-import { adminGuard, authGuard } from './auth.guard';
+import { adminGuard, authGuard, vendedorGuard } from './auth.guard';
 
 describe('auth guards', () => {
   const authMock = {
     autenticado: vi.fn(() => false),
     esAdmin: vi.fn(() => false),
+    esVendedor: vi.fn(() => false),
   };
 
   const route = {} as ActivatedRouteSnapshot;
@@ -21,6 +22,7 @@ describe('auth guards', () => {
   beforeEach(() => {
     authMock.autenticado.mockReset().mockReturnValue(false);
     authMock.esAdmin.mockReset().mockReturnValue(false);
+    authMock.esVendedor.mockReset().mockReturnValue(false);
 
     TestBed.configureTestingModule({
       providers: [provideRouter([]), { provide: AuthService, useValue: authMock }],
@@ -56,6 +58,24 @@ describe('auth guards', () => {
 
     const resultado = TestBed.runInInjectionContext(() => adminGuard(route, state));
     expect(resultado).toBeInstanceOf(UrlTree);
+    expect(TestBed.inject(Router).serializeUrl(resultado as UrlTree)).toBe('/productos');
+  });
+
+  it('vendedorGuard permite el acceso a vendedores y administradores', () => {
+    authMock.autenticado.mockReturnValue(true);
+    authMock.esVendedor.mockReturnValue(true);
+
+    expect(TestBed.runInInjectionContext(() => vendedorGuard(route, state))).toBe(true);
+
+    authMock.esVendedor.mockReturnValue(false);
+    authMock.esAdmin.mockReturnValue(true);
+    expect(TestBed.runInInjectionContext(() => vendedorGuard(route, state))).toBe(true);
+  });
+
+  it('vendedorGuard redirige a los clientes al catalogo', () => {
+    authMock.autenticado.mockReturnValue(true);
+
+    const resultado = TestBed.runInInjectionContext(() => vendedorGuard(route, state));
     expect(TestBed.inject(Router).serializeUrl(resultado as UrlTree)).toBe('/productos');
   });
 });

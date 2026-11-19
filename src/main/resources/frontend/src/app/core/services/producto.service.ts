@@ -23,6 +23,16 @@ export class ProductoService {
     return this.http.get<PageResponse<Producto>>(this.baseUrl, { params });
   }
 
+  listarMisProductos(query: ProductoQuery): Observable<PageResponse<Producto>> {
+    const params = new HttpParams()
+      .set('page', query.page)
+      .set('size', query.size)
+      .set('sort', query.sort)
+      .set('direction', query.direction);
+
+    return this.http.get<PageResponse<Producto>>(`${this.baseUrl}/mis-productos`, { params });
+  }
+
   obtener(id: number): Observable<Producto> {
     return this.http.get<Producto>(`${this.baseUrl}/${id}`);
   }

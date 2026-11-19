@@ -4,9 +4,13 @@ import com.example.demo.dto.PageResponse;
 import com.example.demo.dto.ProductoRequest;
 import com.example.demo.dto.ProductoResponse;
 import com.example.demo.entity.Producto;
+import com.example.demo.entity.Rol;
+import com.example.demo.entity.Usuario;
 import com.example.demo.exception.ParametrosInvalidosException;
 import com.example.demo.exception.ProductoNotFoundException;
 import com.example.demo.repository.ProductoRepository;
+import com.example.demo.repository.UsuarioRepository;
+import org.springframework.security.access.AccessDeniedException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -38,6 +42,9 @@ class ProductoServiceTest {
 
     @Mock
     private ProductoRepository repository;
+
+    @Mock
+    private UsuarioRepository usuarioRepository;
 
     @InjectMocks
     private ProductoService service;
@@ -311,6 +318,104 @@ class ProductoServiceTest {
                 .hasMessageContaining("99");
 
         verify(repository, never()).deleteById(99L);
+    }
+
+    @Test
+    void crearComoVendedorAsignaLaPropiedadDelProducto() {
+        ProductoRequest request = new ProductoRequest("Laptop", new BigDecimal("100.00"), 5);
+        when(usuarioRepository.findByUsername("vendedor")).thenReturn(Optional.of(vendedor()));
+        when(repository.save(any(Producto.class))).thenAnswer(invocacion -> invocacion.getArgument(0));
+
+        service.crear(request, "vendedor", Rol.VENDEDOR);
+
+        ArgumentCaptor<Producto> captor = ArgumentCaptor.forClass(Producto.class);
+        verify(repository).save(captor.capture());
+        assertThat(captor.getValue().getVendedor().getUsername()).isEqualTo("vendedor");
+    }
+
+    @Test
+    void crearComoAdminNoAsignaVendedor() {
+        ProductoRequest request = new ProductoRequest("Laptop", new BigDecimal("100.00"), 5);
+        when(repository.save(any(Producto.class))).thenAnswer(invocacion -> invocacion.getArgument(0));
+
+        service.crear(request, "admin", Rol.ADMIN);
+
+        ArgumentCaptor<Producto> captor = ArgumentCaptor.forClass(Producto.class);
+        verify(repository).save(captor.capture());
+        assertThat(captor.getValue().getVendedor()).isNull();
+    }
+
+    @Test
+    void listarMisProductosUsaElRepositorioDelVendedor() {
+        Producto propio = producto(1L, "Laptop", "100.00", 5);
+        propio.setVendedor(vendedor());
+        when(repository.findByVendedorUsername(eq("vendedor"), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(propio), PageRequest.of(0, 10), 1));
+
+        PageResponse<ProductoResponse> resultado = service.listarMisProductos(
+                "vendedor", 0, 10, "id", "asc");
+
+        assertThat(resultado.content()).hasSize(1);
+        assertThat(resultado.content().get(0).nombre()).isEqualTo("Laptop");
+    }
+
+    @Test
+    void actualizarPermiteAlVendedorPropio() {
+        Producto propio = producto(1L, "Laptop", "100.00", 5);
+        propio.setVendedor(vendedor());
+        when(repository.findById(1L)).thenReturn(Optional.of(propio));
+        when(repository.save(propio)).thenReturn(propio);
+
+        ProductoResponse resultado = service.actualizar(
+                1L,
+                new ProductoRequest("Laptop Pro", new BigDecimal("120.00"), 4),
+                "vendedor",
+                false);
+
+        assertThat(resultado.nombre()).isEqualTo("Laptop Pro");
+    }
+
+    @Test
+    void actualizarRechazaElProductoDeOtroVendedor() {
+        Producto ajeno = producto(1L, "Laptop", "100.00", 5);
+        Usuario otro = new Usuario(2L, "otro", "hash", Rol.VENDEDOR, true);
+        ajeno.setVendedor(otro);
+        when(repository.findById(1L)).thenReturn(Optional.of(ajeno));
+
+        assertThatThrownBy(() -> service.actualizar(
+                1L,
+                new ProductoRequest("Laptop Pro", new BigDecimal("120.00"), 4),
+                "vendedor",
+                false))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verify(repository, never()).save(any(Producto.class));
+    }
+
+    @Test
+    void eliminarPermiteAlAdministradorBorrarCualquierProducto() {
+        Producto ajeno = producto(1L, "Laptop", "100.00", 5);
+        when(repository.findById(1L)).thenReturn(Optional.of(ajeno));
+
+        service.eliminar(1L, "admin", true);
+
+        verify(repository).delete(ajeno);
+    }
+
+    @Test
+    void eliminarRechazaElProductoDeOtroVendedor() {
+        Producto ajeno = producto(1L, "Laptop", "100.00", 5);
+        ajeno.setVendedor(vendedor());
+        when(repository.findById(1L)).thenReturn(Optional.of(ajeno));
+
+        assertThatThrownBy(() -> service.eliminar(1L, "otro", false))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verify(repository, never()).delete(any(Producto.class));
+    }
+
+    private Usuario vendedor() {
+        return new Usuario(3L, "vendedor", "hash", Rol.VENDEDOR, true);
     }
 
     private Producto producto(Long id, String nombre, String precio, Integer stock) {

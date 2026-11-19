@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { adminGuard, authGuard } from '../../core/guards/auth.guard';
+import { authGuard, vendedorGuard } from '../../core/guards/auth.guard';
 
 export const PRODUCTOS_ROUTES: Routes = [
   {
@@ -10,13 +10,13 @@ export const PRODUCTOS_ROUTES: Routes = [
   },
   {
     path: 'nuevo',
-    canActivate: [adminGuard],
+    canActivate: [vendedorGuard],
     loadComponent: () =>
       import('./producto-form/producto-form.component').then((m) => m.ProductoFormComponent),
   },
   {
     path: ':id/editar',
-    canActivate: [adminGuard],
+    canActivate: [vendedorGuard],
     loadComponent: () =>
       import('./producto-form/producto-form.component').then((m) => m.ProductoFormComponent),
   },

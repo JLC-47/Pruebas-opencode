@@ -35,6 +35,10 @@ class SpaControllerTest {
             "/productos",
             "/productos/nuevo",
             "/productos/5/editar",
+            "/perfil",
+            "/vendedor/productos",
+            "/vendedor/ventas",
+            "/admin/usuarios",
             "/carrito",
             "/mis-compras"
         }) {

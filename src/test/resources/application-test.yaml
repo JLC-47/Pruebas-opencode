@@ -30,3 +30,6 @@ app:
     user:
       username: user
       password: user123
+    vendedor:
+      username: vendedor
+      password: vendedor123

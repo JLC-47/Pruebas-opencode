@@ -107,6 +107,7 @@
   gap: 0.5rem;
   color: #e2e8f0;
   font-size: 0.85rem;
+  text-decoration: none;
 }
 
 .avatar {
@@ -119,6 +120,10 @@
   background: #1e293b;
   color: #7dd3fc;
   font-weight: 700;
+}
+
+.avatar-image {
+  object-fit: cover;
 }
 
 .session-name {

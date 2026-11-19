@@ -45,6 +45,7 @@ const servicioMock = {
 
 const authMock = {
   esAdmin: signal(true),
+  esVendedor: signal(false),
 };
 
 const cartMock = {
@@ -82,6 +83,7 @@ describe('ProductoListComponent', () => {
     historialMock.quitar.mockReset();
     historialMock.limpiar.mockReset();
     authMock.esAdmin.set(true);
+    authMock.esVendedor.set(false);
 
     await TestBed.configureTestingModule({
       imports: [ProductoListComponent],
@@ -128,6 +130,18 @@ describe('ProductoListComponent', () => {
     expect(texto).not.toContain('Nuevo producto');
     expect(texto).not.toContain('Editar');
     expect(texto).not.toContain('Eliminar');
+  });
+
+  it('muestra las acciones de escritura para vendedores', () => {
+    authMock.esAdmin.set(false);
+    authMock.esVendedor.set(true);
+
+    const fixture = TestBed.createComponent(ProductoListComponent);
+    fixture.detectChanges();
+
+    const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(texto).toContain('Nuevo producto');
+    expect(texto).toContain('Editar');
   });
 
   it('muestra el error cuando falla la carga', () => {

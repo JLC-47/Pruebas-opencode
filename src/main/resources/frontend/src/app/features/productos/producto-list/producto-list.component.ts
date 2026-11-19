@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  computed,
   OnInit,
   inject,
   signal,
@@ -36,6 +37,7 @@ export class ProductoListComponent implements OnInit {
   private readonly busqueda$ = new Subject<string>();
 
   readonly esAdmin = this.auth.esAdmin;
+  readonly puedeGestionar = computed(() => this.auth.esAdmin() || this.auth.esVendedor());
   readonly busquedasRecientes = this.historial.terminos;
 
   readonly productos = signal<Producto[]>([]);

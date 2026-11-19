@@ -65,6 +65,36 @@ describe('AuthService', () => {
     expect(localStorage.getItem(STORAGE_KEY)).toContain('access-1');
   });
 
+  it('detecta el rol de vendedor', () => {
+    servicio.iniciarSesion({ username: 'vendedor', password: 'vendedor123' }).subscribe();
+
+    http.expectOne('/api/auth/login').flush({
+      ...respuesta,
+      usuario: { id: 3, username: 'vendedor', roles: ['VENDEDOR'] },
+    });
+
+    expect(servicio.esVendedor()).toBe(true);
+    expect(servicio.esAdmin()).toBe(false);
+  });
+
+  it('actualiza los datos del usuario sin perder la sesion', () => {
+    servicio.iniciarSesion({ username: 'admin', password: 'admin123' }).subscribe();
+    http.expectOne('/api/auth/login').flush(respuesta);
+
+    servicio.actualizarUsuario({
+      id: 1,
+      username: 'admin',
+      roles: ['ADMIN'],
+      nombre: 'Ana',
+      tema: 'oscuro',
+    });
+
+    expect(servicio.usuario()?.nombre).toBe('Ana');
+    expect(servicio.usuario()?.tema).toBe('oscuro');
+    expect(servicio.accessToken()).toBe('access-1');
+    expect(localStorage.getItem(STORAGE_KEY)).toContain('oscuro');
+  });
+
   it('registra un cliente y guarda la sesion devuelta', () => {
     let resultado: unknown;
 

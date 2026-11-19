@@ -1,0 +1,65 @@
+<section class="page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">Panel del vendedor</span>
+      <h1>Mis productos</h1>
+      <p class="muted">Publica productos y controla el stock de tu catalogo.</p>
+    </div>
+    <div class="acciones">
+      <a class="btn" routerLink="/vendedor/ventas">Ver ventas</a>
+      <a class="btn btn-primary" routerLink="/productos/nuevo">+ Nuevo producto</a>
+    </div>
+  </header>
+
+  @if (error()) {
+    <div class="alert alert-error">{{ error() }}</div>
+  }
+
+  @if (cargando()) {
+    <div class="state-box">Cargando tus productos...</div>
+  } @else {
+    <div class="resumen">
+      <strong>{{ total() }}</strong>
+      <span>producto(s) en tu catalogo</span>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Precio</th>
+            <th>Stock</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (producto of productos(); track producto.id) {
+            <tr>
+              <td>
+                <strong>{{ producto.nombre }}</strong>
+                @if (producto.categoria) {
+                  <small class="muted block">{{ producto.categoria }}</small>
+                }
+              </td>
+              <td>{{ producto.precio | currency: 'COP' : 'symbol' : '1.0-0' }}</td>
+              <td>{{ estadoStock(producto) }}</td>
+              <td>
+                <a class="btn btn-sm" [routerLink]="['/productos', producto.id, 'editar']"
+                  >Editar</a
+                >
+                <button class="btn btn-sm btn-danger" type="button" (click)="eliminar(producto)">
+                  Eliminar
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="4" class="muted">Todavia no has publicado productos.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

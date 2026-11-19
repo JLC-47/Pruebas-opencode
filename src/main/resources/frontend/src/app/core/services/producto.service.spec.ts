@@ -71,6 +71,16 @@ describe('ProductoService', () => {
     peticion.flush(paginaVacia);
   });
 
+  it('lista los productos propios del vendedor', () => {
+    service.listarMisProductos({ page: 0, size: 20, sort: 'id', direction: 'desc' }).subscribe();
+
+    const peticion = http.expectOne((request) => request.url === '/api/productos/mis-productos');
+    expect(peticion.request.method).toBe('GET');
+    expect(peticion.request.params.get('size')).toBe('20');
+    expect(peticion.request.params.get('direction')).toBe('desc');
+    peticion.flush(paginaVacia);
+  });
+
   it('obtiene un producto por id', () => {
     let resultado: Producto | undefined;
 

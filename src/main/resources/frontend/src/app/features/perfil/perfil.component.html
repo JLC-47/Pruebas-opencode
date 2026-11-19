@@ -1,0 +1,165 @@
+<section class="page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">Cuenta</span>
+      <h1>Mi perfil</h1>
+      <p class="muted">Consulta y personaliza tus datos, tu apariencia y tus notificaciones.</p>
+    </div>
+    <a class="btn" routerLink="/productos">Volver al catalogo</a>
+  </header>
+
+  @if (error()) {
+    <div class="alert alert-error">{{ error() }}</div>
+  }
+
+  @if (cargando()) {
+    <div class="state-box">Cargando perfil...</div>
+  } @else {
+    <div class="perfil-layout">
+      <aside class="card perfil-resumen">
+        @if (form.controls.avatarUrl.value) {
+          <img
+            class="avatar-grande"
+            [src]="form.controls.avatarUrl.value"
+            alt="Avatar del perfil"
+          />
+        } @else {
+          <div class="avatar-grande avatar-inicial">{{ avatarTexto() }}</div>
+        }
+        <h2>{{ form.controls.nombre.value || perfil()?.username }}</h2>
+        <p class="muted">{{ perfil()?.username }}</p>
+        <div class="roles">
+          @for (rol of perfil()?.roles ?? []; track rol) {
+            <span class="rol">{{ rol }}</span>
+          }
+        </div>
+        @if (perfil()?.bio) {
+          <p class="bio">{{ perfil()?.bio }}</p>
+        }
+        <p class="muted small">
+          Miembro {{ perfil()?.enabled ? 'activo' : 'inactivo' }} · Idioma
+          {{ form.controls.idioma.value === 'es' ? 'espanol' : 'ingles' }}
+        </p>
+      </aside>
+
+      <form class="card form" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+        <div>
+          <h2>Datos personales</h2>
+          <p class="muted">Asi te veran otros usuarios dentro de la aplicacion.</p>
+        </div>
+
+        <label class="field">
+          <span>Nombre visible</span>
+          <input class="input" type="text" formControlName="nombre" maxlength="80" />
+          @if (form.controls.nombre.invalid) {
+            <small class="error-text">El nombre admite hasta 80 caracteres.</small>
+          }
+        </label>
+
+        <label class="field">
+          <span>Biografia</span>
+          <textarea
+            class="input textarea"
+            formControlName="bio"
+            maxlength="300"
+            rows="3"
+          ></textarea>
+          @if (form.controls.bio.invalid) {
+            <small class="error-text">La biografia admite hasta 300 caracteres.</small>
+          }
+        </label>
+
+        <label class="field">
+          <span>URL del avatar</span>
+          <input
+            class="input"
+            type="text"
+            formControlName="avatarUrl"
+            maxlength="500"
+            placeholder="https://ejemplo.com/avatar.png"
+          />
+          @if (form.controls.avatarUrl.invalid) {
+            <small class="error-text">La URL admite hasta 500 caracteres.</small>
+          }
+        </label>
+
+        <div class="grid-2">
+          <label class="field">
+            <span>Tema</span>
+            <select class="input" formControlName="tema">
+              @for (tema of temas; track tema) {
+                <option [value]="tema">{{ tema }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Idioma</span>
+            <select class="input" formControlName="idioma">
+              <option value="es">Espanol</option>
+              <option value="en">English</option>
+            </select>
+          </label>
+        </div>
+
+        <label class="checkbox">
+          <input type="checkbox" formControlName="notificacionesActivas" />
+          <span>Recibir notificaciones de la aplicacion</span>
+        </label>
+
+        <div class="form-actions">
+          <button class="btn btn-primary" type="submit" [disabled]="guardando()">
+            {{ guardando() ? 'Guardando...' : 'Guardar perfil' }}
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <form class="card form" [formGroup]="passwordForm" (ngSubmit)="cambiarContrasena()" novalidate>
+      <div>
+        <h2>Cambiar contrasena</h2>
+        <p class="muted">Usa al menos 8 caracteres para proteger tu cuenta.</p>
+      </div>
+
+      <div class="grid-2">
+        <label class="field">
+          <span>Contrasena actual</span>
+          <input
+            class="input"
+            type="password"
+            formControlName="contrasenaActual"
+            autocomplete="current-password"
+          />
+          @if (
+            passwordForm.controls.contrasenaActual.touched &&
+            passwordForm.controls.contrasenaActual.invalid
+          ) {
+            <small class="error-text">Indica tu contrasena actual.</small>
+          }
+        </label>
+
+        <label class="field">
+          <span>Nueva contrasena</span>
+          <input
+            class="input"
+            type="password"
+            formControlName="contrasenaNueva"
+            autocomplete="new-password"
+          />
+          @if (
+            passwordForm.controls.contrasenaNueva.touched &&
+            passwordForm.controls.contrasenaNueva.invalid
+          ) {
+            <small class="error-text">Debe tener entre 8 y 72 caracteres.</small>
+          }
+        </label>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit" [disabled]="guardandoPassword()">
+          {{ guardandoPassword() ? 'Actualizando...' : 'Actualizar contrasena' }}
+        </button>
+      </div>
+    </form>
+  }
+</section>

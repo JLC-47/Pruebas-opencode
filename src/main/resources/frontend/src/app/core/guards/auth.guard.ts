@@ -15,6 +15,19 @@ export const authGuard: CanActivateFn = (_route, state): boolean | UrlTree => {
   });
 };
 
+export const vendedorGuard: CanActivateFn = (): boolean | UrlTree => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+
+  if (!auth.autenticado()) {
+    return router.createUrlTree(['/login'], {
+      queryParams: { returnUrl: '/vendedor/productos' },
+    });
+  }
+
+  return auth.esVendedor() || auth.esAdmin() ? true : router.createUrlTree(['/productos']);
+};
+
 export const adminGuard: CanActivateFn = (): boolean | UrlTree => {
   const auth = inject(AuthService);
   const router = inject(Router);

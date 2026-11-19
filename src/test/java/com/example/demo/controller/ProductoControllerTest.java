@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.PageResponse;
+import com.example.demo.entity.Rol;
 import com.example.demo.dto.ProductoRequest;
 import com.example.demo.dto.ProductoResponse;
 import com.example.demo.exception.ParametrosInvalidosException;
@@ -19,6 +20,8 @@ import java.util.List;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -154,7 +157,7 @@ class ProductoControllerTest {
 
     @Test
     void crearDevuelve201ConElProductoCreado() throws Exception {
-        when(service.crear(any(ProductoRequest.class)))
+        when(service.crear(any(ProductoRequest.class), anyString(), any(Rol.class)))
                 .thenReturn(new ProductoResponse(5L, "Laptop", new BigDecimal("2500000.00"), 10));
 
         mockMvc.perform(post("/api/productos")
@@ -165,7 +168,7 @@ class ProductoControllerTest {
                 .andExpect(jsonPath("$.id").value(5))
                 .andExpect(jsonPath("$.nombre").value("Laptop"));
 
-        verify(service).crear(any(ProductoRequest.class));
+        verify(service).crear(any(ProductoRequest.class), anyString(), any(Rol.class));
     }
 
     @Test
@@ -187,7 +190,7 @@ class ProductoControllerTest {
                 .andExpect(jsonPath("$.errors.precio").exists())
                 .andExpect(jsonPath("$.errors.stock").exists());
 
-        verify(service, never()).crear(any(ProductoRequest.class));
+        verify(service, never()).crear(any(ProductoRequest.class), anyString(), any(Rol.class));
     }
 
     @Test
@@ -201,7 +204,7 @@ class ProductoControllerTest {
 
     @Test
     void actualizarDevuelve200ConElProductoActualizado() throws Exception {
-        when(service.actualizar(anyLong(), any(ProductoRequest.class)))
+        when(service.actualizar(anyLong(), any(ProductoRequest.class), anyString(), anyBoolean()))
                 .thenReturn(new ProductoResponse(1L, "Laptop Gamer", new BigDecimal("2300000.00"), 8));
 
         mockMvc.perform(put("/api/productos/1")
@@ -214,7 +217,7 @@ class ProductoControllerTest {
 
     @Test
     void actualizarDevuelve404CuandoElProductoNoExiste() throws Exception {
-        when(service.actualizar(anyLong(), any(ProductoRequest.class)))
+        when(service.actualizar(anyLong(), any(ProductoRequest.class), anyString(), anyBoolean()))
                 .thenThrow(new ProductoNotFoundException(99L));
 
         mockMvc.perform(put("/api/productos/99")
@@ -242,7 +245,8 @@ class ProductoControllerTest {
                 .andExpect(jsonPath("$.errors.precio").exists())
                 .andExpect(jsonPath("$.errors.stock").exists());
 
-        verify(service, never()).actualizar(anyLong(), any(ProductoRequest.class));
+        verify(service, never())
+                .actualizar(anyLong(), any(ProductoRequest.class), anyString(), anyBoolean());
     }
 
     @Test
@@ -264,12 +268,14 @@ class ProductoControllerTest {
         mockMvc.perform(delete("/api/productos/1"))
                 .andExpect(status().isNoContent());
 
-        verify(service).eliminar(1L);
+        verify(service).eliminar(eq(1L), anyString(), anyBoolean());
     }
 
     @Test
     void eliminarDevuelve404CuandoElProductoNoExiste() throws Exception {
-        doThrow(new ProductoNotFoundException(99L)).when(service).eliminar(99L);
+        doThrow(new ProductoNotFoundException(99L))
+                .when(service)
+                .eliminar(eq(99L), anyString(), anyBoolean());
 
         mockMvc.perform(delete("/api/productos/99"))
                 .andExpect(status().isNotFound());

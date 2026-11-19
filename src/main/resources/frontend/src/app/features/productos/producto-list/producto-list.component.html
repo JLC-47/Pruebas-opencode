@@ -5,7 +5,7 @@
       <h1>Productos</h1>
       <p class="muted">{{ totalElements() }} producto(s) registrados</p>
     </div>
-    @if (esAdmin()) {
+    @if (puedeGestionar()) {
       <a class="btn btn-primary" routerLink="nuevo">+ Nuevo producto</a>
     }
   </header>
@@ -138,7 +138,7 @@
               >
                 {{ producto.stock <= 0 ? 'Agotado' : 'Agregar al carrito' }}
               </button>
-              @if (esAdmin()) {
+              @if (puedeGestionar()) {
                 <a class="btn btn-sm" [routerLink]="[producto.id, 'editar']">Editar</a>
                 <button class="btn btn-sm btn-danger" type="button" (click)="eliminar(producto)">
                   Eliminar

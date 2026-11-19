@@ -1,0 +1,70 @@
+.admin-layout {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.roles-card {
+  display: grid;
+  align-content: start;
+  gap: 0.6rem;
+}
+
+.roles-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.roles-list li {
+  display: grid;
+  gap: 0.15rem;
+  border-left: 3px solid var(--color-primary);
+  padding-left: 0.75rem;
+}
+
+.roles-list small {
+  color: var(--color-muted);
+}
+
+.checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-weight: 600;
+}
+
+.input-sm {
+  padding: 0.35rem 0.5rem;
+}
+
+.block {
+  display: block;
+}
+
+.rol {
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #075985;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0.2rem 0.6rem;
+}
+
+.activo {
+  color: #15803d;
+  font-weight: 700;
+}
+
+.inactivo {
+  color: var(--color-danger);
+  font-weight: 700;
+}
+
+@media (min-width: 900px) {
+  .admin-layout {
+    grid-template-columns: minmax(0, 1fr) 20rem;
+    align-items: start;
+  }
+}

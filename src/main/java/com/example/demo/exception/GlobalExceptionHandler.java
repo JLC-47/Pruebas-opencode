@@ -38,6 +38,14 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
+    @ExceptionHandler(UsuarioNotFoundException.class)
+    public ProblemDetail handleUsuarioNotFound(UsuarioNotFoundException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        problem.setTitle("Usuario no encontrado");
+        problem.setProperty("timestamp", Instant.now().toString());
+        return problem;
+    }
+
     @ExceptionHandler(StockInsuficienteException.class)
     public ProblemDetail handleStockInsuficiente(StockInsuficienteException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());

@@ -1,6 +1,6 @@
 # Productos API
 
-Aplicacion web de catalogo y compras construida con Spring Boot y Angular. Incluye paginacion, busqueda, validacion de datos, autenticacion JWT con roles, registro de clientes, carrito de compras, checkout con descuento transaccional de stock, historial de pedidos, devoluciones parciales o totales que reponen el inventario, manejo centralizado de errores, notificaciones y confirmaciones elegantes, historial de busquedas, documentacion OpenAPI, pruebas automatizadas con cobertura y una coleccion de Postman lista para ejecutar.
+Aplicacion web de catalogo y compras construida con Spring Boot y Angular. Incluye paginacion, busqueda, validacion de datos, autenticacion JWT con roles, registro de clientes, perfil personalizable, rol `VENDEDOR` con productos propios y panel de ventas, panel de administracion de usuarios y roles, carrito de compras, checkout con descuento transaccional de stock, historial de pedidos, devoluciones parciales o totales que reponen el inventario, manejo centralizado de errores, notificaciones y confirmaciones elegantes, historial de busquedas, documentacion OpenAPI, pruebas automatizadas con cobertura y una coleccion de Postman lista para ejecutar.
 
 ## Tecnologias
 
@@ -33,7 +33,7 @@ src/main/java/com/example/demo
   service/      Logica de negocio, autenticacion y compras
 src/main/resources/frontend
   src/app/core/       Modelos, servicios, guards e interceptor
-  src/app/features/   Productos, carrito, compras, login y registro
+  src/app/features/   Productos, perfil, vendedor, admin, carrito, compras, login y registro
   src/app/shared/     Componentes compartidos (404)
   src/app/app.routes.ts  Rutas con lazy loading y guards
   proxy.conf.json     Proxy de desarrollo hacia Spring Boot
@@ -47,6 +47,7 @@ src/test/java/com/example/demo
   service/      Pruebas unitarias con Mockito
   DemoApplicationTest.java
   ProductoApiIntegrationTest.java
+  PerfilesRolesApiIntegrationTest.java
   CompraApiIntegrationTest.java
 .github/workflows/ci.yml  CI de backend y frontend
 database/       Script de creacion de la base de datos
@@ -81,9 +82,10 @@ mysql -u root -p < database/pruebas_db.sql
 | `JWT_SECRET` | Secreto de desarrollo por defecto; obligatorio en `prod` y recomendable sobrescribir siempre |
 | `JWT_ACCESS_TOKEN_MINUTES` | `20` |
 | `JWT_REFRESH_TOKEN_DAYS` | `7` |
-| `APP_SEED_ENABLED` | `false` (actívalo en `dev`/`test` para cargar usuarios y catalogo) |
+| `APP_SEED_ENABLED` | `true` (crea los usuarios de ejemplo, incluido `vendedor`; `prod` lo fuerza a `false`) |
 | `APP_SEED_ADMIN_USERNAME` / `APP_SEED_ADMIN_PASSWORD` | `admin` / `admin123` |
 | `APP_SEED_USER_USERNAME` / `APP_SEED_USER_PASSWORD` | `user` / `user123` |
+| `APP_SEED_VENDEDOR_USERNAME` / `APP_SEED_VENDEDOR_PASSWORD` | `vendedor` / `vendedor123` |
 
 En produccion define siempre un `JWT_SECRET` propio de al menos 256 bits codificado en Base64: `application-prod.yaml` lo exige y la aplicacion falla en el arranque si no esta definido. Los mensajes de error del servlet y los detalles del health check no se exponen por defecto.
 
@@ -140,11 +142,13 @@ Sin perfil activo la aplicacion usa MySQL, el secreto JWT de desarrollo y el see
    cd ../../../..
    ```
 
-4. Inicia Spring Boot desde la raiz del proyecto con el perfil `dev` (incluye el secreto JWT de desarrollo y crea los usuarios de ejemplo):
+4. Inicia Spring Boot desde la raiz del proyecto. El perfil `dev` es opcional: la configuracion por defecto ya habilita el seed y crea `admin`, `user` y `vendedor` si faltan en la base de datos.
 
    ```bash
-   mvn spring-boot:run -Dspring-boot.run.profiles=dev
+   mvn spring-boot:run
    ```
+
+   Tambien puedes usar el perfil `dev` para ver mas logs: `mvn spring-boot:run -Dspring-boot.run.profiles=dev`.
 
 5. Abre `http://localhost:8080`. Seras redirigido a `/login`.
 
@@ -152,8 +156,11 @@ Sin perfil activo la aplicacion usa MySQL, el secreto JWT de desarrollo y el see
 
    | Usuario | Contrasena | Permisos |
    | --- | --- | --- |
-   | `admin` | `admin123` | Consultar, crear, editar, eliminar y comprar |
-   | `user` | `user123` | Consultar productos, comprar e historial |
+    | `admin` | `admin123` | Panel admin, productos y compras |
+    | `vendedor` | `vendedor123` | Productos propios, panel de ventas y compras |
+    | `user` | `user123` | Consultar productos, comprar e historial |
+
+   En `/login` hay accesos rapidos para rellenar las credenciales de administrador, vendedor y cliente. El de `vendedor / vendedor123` permite entrar directamente a "Panel vendedor".
 
    Swagger UI queda en `http://localhost:8080/swagger-ui.html` y el health check en `http://localhost:8080/actuator/health`.
 
@@ -228,7 +235,11 @@ Content-Type: application/json
   "usuario": {
     "id": 1,
     "username": "admin",
-    "roles": ["ADMIN"]
+    "roles": ["ADMIN"],
+    "nombre": "Administrador",
+    "tema": "claro",
+    "idioma": "es",
+    "notificacionesActivas": true
   }
 }
 ```
@@ -256,23 +267,74 @@ Authorization: Bearer <accessToken>
 
 ### Permisos
 
-| Recurso | `USER` | `ADMIN` | Publico |
-| --- | --- | --- | --- |
-| `GET /api/productos/**` | Si | Si | No |
-| `POST`, `PUT`, `DELETE /api/productos/**` | No | Si | No |
-| `GET`, `POST /api/compras` y `/api/compras/{id}/devoluciones` | Si | Si | No |
-| `/api/auth/login`, `/register`, `/refresh`, `/logout` | - | - | Si |
-| `/actuator/health`, `/actuator/info` | - | - | Si |
-| `/v3/api-docs/**`, `/swagger-ui/**` | - | - | Si |
+| Recurso | `USER` | `VENDEDOR` | `ADMIN` | Publico |
+| --- | --- | --- | --- | --- |
+| `GET /api/productos/**` | Si | Si | Si | No |
+| `POST`, `PUT`, `DELETE /api/productos/**` | No | Solo propios | Si | No |
+| `GET /api/productos/mis-productos` | No | Si | Si | No |
+| `GET /api/vendedores/ventas` | No | Si | Si | No |
+| `/api/perfil` y `/api/perfil/password` | Si | Si | Si | No |
+| `/api/admin/**` | No | No | Si | No |
+| `GET`, `POST /api/compras` y `/api/compras/{id}/devoluciones` | Si | Si | Si | No |
+| `/api/auth/login`, `/register`, `/refresh`, `/logout` | - | - | - | Si |
+| `/actuator/health`, `/actuator/info` | - | - | - | Si |
+| `/v3/api-docs/**`, `/swagger-ui/**` | - | - | - | Si |
 
-Usuarios de demostracion creados por `InicializadorDatos` cuando `app.seed.enabled=true` (perfiles `dev` y `test`; nunca en `prod`):
+Usuarios de demostracion creados por `InicializadorDatos` cuando `app.seed.enabled=true` (activo por defecto, incluidos los perfiles `dev` y `test`; nunca en `prod`):
 
 | Usuario | Contrasena | Rol |
 | --- | --- | --- |
 | `admin` | `admin123` | `ADMIN` |
+| `vendedor` | `vendedor123` | `VENDEDOR` |
 | `user` | `user123` | `USER` |
 
-El seed esta desactivado por defecto fuera de `dev`/`test`. Cambia las credenciales con las variables `APP_SEED_*` y usa contraseñas propias en cualquier entorno compartido.
+El seed se activa por defecto en la configuracion local; `application-prod.yaml` lo desactiva. Cambia las credenciales con las variables `APP_SEED_*` y usa contraseñas propias en cualquier entorno compartido. Si tu base ya existia antes de anadir el rol, reiniciala con `APP_SEED_ENABLED=true` para que se cree el usuario `vendedor`.
+
+Los productos creados por un `VENDEDOR` quedan asociados a su cuenta: solo ese vendedor (o un `ADMIN`) puede editarlos o eliminarlos. En una base vacia el seed asigna los primeros cuatro productos al usuario `vendedor`, por lo que su panel de ventas muestra pedidos listos para probar.
+
+## Perfil, vendedor y administracion
+
+### Perfil
+
+`GET /api/perfil` devuelve los datos del usuario autenticado, incluidos `nombre`, `bio`, `avatarUrl`, `tema` (`claro`, `oscuro` o `sistema`), `idioma` (`es` o `en`) y `notificacionesActivas`. `PUT /api/perfil` actualiza esas preferencias y `PUT /api/perfil/password` cambia la contrasena validando la actual.
+
+```http
+PUT /api/perfil
+Authorization: Bearer <accessToken>
+Content-Type: application/json
+
+{
+  "nombre": "Ana Perez",
+  "bio": "Compradora frecuente",
+  "avatarUrl": "/avatar/ana.png",
+  "tema": "oscuro",
+  "idioma": "es",
+  "notificacionesActivas": true
+}
+```
+
+El frontend aplica el tema elegido a todo el documento y actualiza la sesion guardada para que el avatar y el nombre aparezcan en la cabecera sin recargar.
+
+### Vendedor
+
+`GET /api/productos/mis-productos` devuelve solo los productos del vendedor autenticado. Las operaciones `POST`, `PUT` y `DELETE /api/productos/**` siguen disponibles para `ADMIN` y `VENDEDOR`, pero el vendedor recibe `403` si intenta modificar un producto ajeno. `GET /api/vendedores/ventas` devuelve `totalVendido`, `unidadesVendidas`, `pedidos` y el detalle de cada venta.
+
+### Administracion
+
+Solo `ADMIN` puede usar `/api/admin/**`:
+
+| Metodo | Ruta | Descripcion |
+| --- | --- | --- |
+| GET | `/api/admin/usuarios` | Lista usuarios |
+| GET | `/api/admin/usuarios/{id}` | Obtiene un usuario |
+| POST | `/api/admin/usuarios` | Crea un usuario con rol `USER`, `VENDEDOR` o `ADMIN` |
+| PUT | `/api/admin/usuarios/{id}` | Actualiza usuario, contrasena, rol y estado |
+| DELETE | `/api/admin/usuarios/{id}` | Elimina un usuario |
+| PUT | `/api/admin/usuarios/{id}/rol` | Asigna un rol |
+| PUT | `/api/admin/usuarios/{id}/estado?enabled=true|false` | Activa o desactiva |
+| GET | `/api/admin/roles` | Lista roles con permisos |
+
+Mediante los endpoints especificos de rol y estado, un administrador no puede cambiar su propio rol ni desactivarse a si mismo; la API responde `400 Bad Request`. La actualizacion completa ademas impide eliminar o degradar al ultimo administrador.
 
 ## Frontend Angular
 
@@ -285,14 +347,20 @@ El frontend vive en `src/main/resources/frontend` y se sirve desde el mismo Spri
 | `/` | Redireccion | Redirige a `/productos` |
 | `/login` | `LoginComponent` | Publico |
 | `/registro` | `RegistroComponent` | Publico |
-| `/productos` | `ProductoListComponent` | `authGuard` (USER o ADMIN) |
-| `/carrito` | `CarritoComponent` | `authGuard` (USER o ADMIN) |
-| `/mis-compras` | `MisComprasComponent` | `authGuard` (USER o ADMIN) |
-| `/productos/nuevo` | `ProductoFormComponent` | `adminGuard` (ADMIN) |
-| `/productos/:id/editar` | `ProductoFormComponent` | `adminGuard` (ADMIN) |
+| `/productos` | `ProductoListComponent` | `authGuard` (USER, VENDEDOR o ADMIN) |
+| `/perfil` | `PerfilComponent` | `authGuard` (cualquier usuario autenticado) |
+| `/vendedor/productos` | `VendedorProductosComponent` | `vendedorGuard` (VENDEDOR o ADMIN) |
+| `/vendedor/ventas` | `VendedorVentasComponent` | `vendedorGuard` (VENDEDOR o ADMIN) |
+| `/admin/usuarios` | `AdminUsuariosComponent` | `adminGuard` (ADMIN) |
+| `/carrito` | `CarritoComponent` | `authGuard` (USER, VENDEDOR o ADMIN) |
+| `/mis-compras` | `MisComprasComponent` | `authGuard` (USER, VENDEDOR o ADMIN) |
+| `/productos/nuevo` | `ProductoFormComponent` | `vendedorGuard` (VENDEDOR o ADMIN) |
+| `/productos/:id/editar` | `ProductoFormComponent` | `vendedorGuard` (VENDEDOR o ADMIN) |
 | `**` | `NotFoundComponent` | Publico |
 
 La sesion se guarda en `localStorage`, se restaura al recargar y se renueva automaticamente 60 segundos antes de expirar. Si el refresh falla, se limpia la sesion y se redirige a `/login` conservando la URL original en `returnUrl`.
+
+El perfil permite editar nombre, biografia, avatar, tema e idioma. La preferencia de tema se aplica al documento con `data-tema` (`claro`, `oscuro` o `sistema`), por lo que las tarjetas, tablas y alertas cambian de paleta sin recargar. La cabecera muestra el avatar personalizado y enlaza al perfil.
 
 Todas las peticiones HTTP muestran una capa de carga global con anillos orbitales, barra de progreso y mensaje animado. `LoadingService` mantiene la animacion visible al menos **3 segundos** (`DURACION_MINIMA_CARGA_MS`), espera a que terminen las peticiones concurrentes y permite cambiar ese tiempo en un solo lugar. La interfaz respeta `prefers-reduced-motion` para reducir las animaciones.
 
@@ -323,7 +391,8 @@ npm run build
 
 El resultado se escribe directamente en `src/main/resources/static`. Luego inicia la aplicacion con `mvn spring-boot:run` y abre `http://localhost:8080`.
 
-Las rutas profundas como `/productos/5/editar`, `/carrito`, `/login` y `/registro` se redirigen a `index.html` mediante `SpaController`, y Angular resuelve la vista. La carpeta `static` es un artefacto de build: esta en `.gitignore` y se regenera con `npm run build` o en el CI.
+Las rutas profundas como `/productos/5/editar`, `/perfil`, `/vendedor/ventas`, `/admin/usuarios`, `/carrito`, `/login` y `/registro` se redirigen a `index.html` mediante `SpaController`, y Angular resuelve la vista.
+ La carpeta `static` es un artefacto de build: esta en `.gitignore` y se regenera con `npm run build` o en el CI.
 
 ## Carrito y compras
 
@@ -357,14 +426,26 @@ La respuesta es la compra actualizada con `estado`, `totalDevuelto` y `cantidadD
 | POST | `/api/auth/register` | Registra un cliente con rol USER | Publico | 201, 400, 409 |
 | POST | `/api/auth/refresh` | Renueva la sesion | Publico | 200, 400, 401 |
 | POST | `/api/auth/logout` | Revoca el refresh token | Publico | 204, 400, 401 |
-| GET | `/api/productos` | Lista paginada con busqueda por nombre | USER/ADMIN | 200, 400, 401 |
-| GET | `/api/productos/{id}` | Obtiene un producto por id | USER/ADMIN | 200, 401, 404 |
-| POST | `/api/productos` | Crea un producto | ADMIN | 201, 400, 401, 403 |
-| PUT | `/api/productos/{id}` | Actualiza un producto | ADMIN | 200, 400, 401, 403, 404 |
-| DELETE | `/api/productos/{id}` | Elimina un producto | ADMIN | 204, 401, 403, 404 |
-| POST | `/api/compras` | Confirma el carrito y descuenta stock | USER/ADMIN | 201, 400, 401, 404, 409 |
-| GET | `/api/compras` | Lista las compras del usuario autenticado | USER/ADMIN | 200, 401 |
-| POST | `/api/compras/{id}/devoluciones` | Devuelve unidades de un pedido y repone stock | USER/ADMIN | 200, 400, 401, 404 |
+| GET | `/api/productos` | Lista paginada con busqueda por nombre | USER/VENDEDOR/ADMIN | 200, 400, 401 |
+| GET | `/api/productos/mis-productos` | Lista los productos propios | VENDEDOR/ADMIN | 200, 400, 401, 403 |
+| GET | `/api/productos/{id}` | Obtiene un producto por id | USER/VENDEDOR/ADMIN | 200, 401, 404 |
+| POST | `/api/productos` | Crea un producto | VENDEDOR/ADMIN | 201, 400, 401, 403 |
+| PUT | `/api/productos/{id}` | Actualiza un producto propio | VENDEDOR/ADMIN | 200, 400, 401, 403, 404 |
+| DELETE | `/api/productos/{id}` | Elimina un producto propio | VENDEDOR/ADMIN | 204, 401, 403, 404 |
+| GET | `/api/perfil` | Devuelve el perfil propio | Autenticado | 200, 401, 404 |
+| PUT | `/api/perfil` | Actualiza datos y preferencias | Autenticado | 200, 400, 401 |
+| PUT | `/api/perfil/password` | Cambia la contrasena | Autenticado | 204, 400, 401 |
+| GET | `/api/vendedores/ventas` | Resumen de ventas propias | VENDEDOR/ADMIN | 200, 401, 403 |
+| GET | `/api/admin/usuarios` | Lista usuarios | ADMIN | 200, 401, 403 |
+| POST | `/api/admin/usuarios` | Crea un usuario con rol | ADMIN | 201, 400, 401, 403, 409 |
+| PUT | `/api/admin/usuarios/{id}` | Actualiza un usuario | ADMIN | 200, 400, 401, 403, 404 |
+| DELETE | `/api/admin/usuarios/{id}` | Elimina un usuario | ADMIN | 204, 400, 401, 403, 404 |
+| PUT | `/api/admin/usuarios/{id}/rol` | Asigna un rol | ADMIN | 200, 400, 401, 403, 404 |
+| PUT | `/api/admin/usuarios/{id}/estado` | Activa o desactiva | ADMIN | 200, 400, 401, 403, 404 |
+| GET | `/api/admin/roles` | Lista roles y permisos | ADMIN | 200, 401, 403 |
+| POST | `/api/compras` | Confirma el carrito y descuenta stock | USER/VENDEDOR/ADMIN | 201, 400, 401, 404, 409 |
+| GET | `/api/compras` | Lista las compras del usuario autenticado | USER/VENDEDOR/ADMIN | 200, 401 |
+| POST | `/api/compras/{id}/devoluciones` | Devuelve unidades de un pedido y repone stock | USER/VENDEDOR/ADMIN | 200, 400, 401, 404 |
 | GET | `/v3/api-docs` | Documento OpenAPI en JSON | 200 |
 | GET | `/swagger-ui.html` | Swagger UI interactivo | 200 |
 | GET | `/actuator/health` | Estado de la aplicacion | 200 |
@@ -476,22 +557,26 @@ Con la aplicacion en ejecucion:
 
 ## Pruebas automatizadas
 
-La suite del backend incluye **131 pruebas** y no requiere MySQL: usa H2 en memoria con el perfil `test`. El frontend agrega **99 pruebas** con Vitest, distribuidas en 20 archivos.
+La suite del backend incluye **175 pruebas** y no requiere MySQL: usa H2 en memoria con el perfil `test`. El frontend agrega **127 pruebas** con Vitest, distribuidas en 27 archivos.
 
-Resultados de la ultima ejecucion local (`2026-11-18`):
+Resultados de la ultima ejecucion local (`2026-11-19`):
 
 | Comando | Resultado |
 | --- | --- |
-| `mvn -B verify` | 131 pruebas, 0 fallos; umbral JaCoCo del 80 % cumplido |
-| `npm run test:ci` | 20 archivos, 99 pruebas aprobadas |
+| `mvn -B verify` | 175 pruebas, 0 fallos; umbral JaCoCo del 80 % cumplido |
+| `npm run test:ci` | 27 archivos, 127 pruebas aprobadas |
 | `npm run format:check` | Formato Prettier correcto |
 | `npm run build` | Build de Angular generado en `src/main/resources/static` |
 
 | Clase | Tipo | Pruebas | Que cubre |
 | --- | --- | ---: | --- |
-| `ProductoServiceTest` | Unitaria con Mockito | 20 | CRUD, paginacion, busqueda, ordenamiento, parametros invalidos e imagenes por categoria |
+| `ProductoServiceTest` | Unitaria con Mockito | 27 | CRUD, paginacion, busqueda, ordenamiento, propiedad por vendedor y parametros invalidos |
 | `ProductoControllerTest` | Web con MockMvc | 17 | Codigos HTTP, validacion, paginacion, errores y metadatos |
 | `ProductoApiIntegrationTest` | Integracion | 9 | Flujo CRUD autenticado, H2, paginacion, busqueda, health, OpenAPI y 404 |
+| `PerfilesRolesApiIntegrationTest` | Integracion | 10 | Perfil, contrasena, login del vendedor, panel admin, roles y flujo completo del vendedor |
+| `PerfilServiceTest` | Unitaria con Mockito | 7 | Consulta, edicion, preferencias y cambio de contrasena |
+| `AdminServiceTest` | Unitaria con Mockito | 16 | CRUD de usuarios, roles, estado y reglas de administrador |
+| `VendedorServiceTest` | Unitaria con Mockito | 3 | Resumen de ventas y mapeo de pedidos |
 | `AuthApiIntegrationTest` | Integracion | 16 | Login, registro con rol forzado, duplicados 409, refresh con rotacion, logout, errores 401/403 y permisos por rol |
 | `CompraApiIntegrationTest` | Integracion | 16 | Checkout, descuento y reposicion de stock, devoluciones parciales/totales, duplicados, historial, 400/404/409 y 401 |
 | `ProductoRepositoryTest` | Persistencia con `@DataJpaTest` | 6 | Guardado, actualizacion, borrado, busqueda y paginacion |
@@ -500,6 +585,7 @@ Resultados de la ultima ejecucion local (`2026-11-18`):
 | `ProductoResponseTest` | Unitaria | 4 | Mapeo entidad -> DTO, incluidos valores nulos e imagen |
 | `PageResponseTest` | Unitaria | 3 | Mapeo de paginas de Spring Data |
 | `OpenApiConfigTest` | Unitaria | 1 | Metadatos de la documentacion OpenAPI |
+| `ConfiguracionPorDefectoTest` | Unitaria | 1 | El perfil por defecto habilita el seed y define las credenciales del vendedor |
 | `SpaControllerTest` | Unitaria | 2 | Redireccion de rutas del SPA, incluida `/registro`, al `index.html` |
 | `JwtServiceTest` | Unitaria | 10 | Generacion, `jti`, issuer/audiencia, expiracion, firma, secreto y extraccion de claims |
 | `DemoApplicationTest` | Smoke test | 1 | Carga del contexto de Spring |
@@ -509,6 +595,8 @@ Resultados de la ultima ejecucion local (`2026-11-18`):
 | Clase | Prueba | Que valida |
 | --- | --- | --- |
 | `AuthApiIntegrationTest` | `loginDeAdminDevuelveTokensYRoles` | Login real y payload de tokens |
+| `PerfilesRolesApiIntegrationTest` | `vendedorPuedeIniciarSesionYAccederASusRutas` | Login de `vendedor / vendedor123`, rol devuelto y acceso a perfil, productos propios y ventas |
+| `ConfiguracionPorDefectoTest` | `elPerfilPorDefectoCreaElUsuarioVendedorDeDemostracion` | Evita que el arranque sin perfil vuelva a dejar al vendedor sin cuenta |
 | `AuthApiIntegrationTest` | `registroCreaUnClienteConRolUserYDevuelveTokens` | Alta real de cliente, BCrypt y auto-login |
 | `AuthApiIntegrationTest` | `registroNoPermiteElegirElRolAdmin` | El rol `ADMIN` enviado por el cliente se ignora |
 | `AuthApiIntegrationTest` | `registroDuplicadoDevuelve409` | Conflicto al repetir el nombre de usuario |
@@ -530,7 +618,7 @@ Resultados de la ultima ejecucion local (`2026-11-18`):
 | `ProductoControllerTest` | `listarUsaValoresPorDefectoCuandoNoSeEnvianParametros` | Valores por defecto `page=0`, `size=10`, `sort=id`, `direction=asc` |
 | `ProductoRepositoryTest` | `eliminaUnProductoExistente` | Borrado persistente |
 | `GlobalExceptionHandlerTest` | `errorInesperadoDevuelve500` | Respuesta `ProblemDetail` para errores no controlados |
-| `SpaControllerTest` | `lasRutasDelFrontendSeReenvianAlIndex` | Forward de `/login`, `/registro`, `/productos/**`, `/carrito` y `/mis-compras` a `index.html` |
+| `SpaControllerTest` | `lasRutasDelFrontendSeReenvianAlIndex` | Forward de `/login`, `/registro`, `/productos/**`, `/perfil`, `/vendedor/**`, `/admin/**`, `/carrito` y `/mis-compras` a `index.html` |
 | `JwtServiceTest` | `rechazaUnTokenFirmadoConOtraClave` | Que un token con firma ajena no sea aceptado |
 | `DemoApplicationTest` | `contextLoads` | La aplicacion arranca con el perfil `test` |
 
@@ -538,8 +626,11 @@ Resultados de la ultima ejecucion local (`2026-11-18`):
 
 | Archivo | Pruebas | Que cubre |
 | --- | ---: | --- |
-| `producto.service.spec.ts` | 6 | Listado con filtros y paginacion, obtener, crear, actualizar y eliminar |
-| `auth.service.spec.ts` | 6 | Login, registro, restauracion, refresh compartido, fallo de refresh y logout |
+| `producto.service.spec.ts` | 7 | Listado con filtros, mis productos, obtener, crear, actualizar y eliminar |
+| `auth.service.spec.ts` | 8 | Login, rol vendedor, datos de perfil, registro, restauracion, refresh y logout |
+| `perfil.service.spec.ts` | 3 | Consulta, actualizacion y cambio de contrasena |
+| `admin.service.spec.ts` | 3 | Usuarios, roles, cambio de rol y estado |
+| `vendedor.service.spec.ts` | 1 | Resumen de ventas |
 | `api.interceptor.spec.ts` | 6 | Cabeceras, bearer token, retry tras 401, refresh fallido y errores |
 | `loading.interceptor.spec.ts` | 2 | Muestra la animacion en cada peticion y la oculta al completar o fallar |
 | `loading.service.spec.ts` | 4 | Duracion minima de 3 segundos, concurrencia y reinicio de la espera |
@@ -549,15 +640,19 @@ Resultados de la ultima ejecucion local (`2026-11-18`):
 | `notification-center.component.spec.ts` | 3 | Pila vacia, notificacion de exito, cierre manual y alertas accesibles |
 | `confirm-dialog.component.spec.ts` | 3 | Render condicional, accion peligrosa, botones y cierre con `Escape` |
 | `historial-busqueda.service.spec.ts` | 7 | Persistencia, limite de 8, deduplicacion, eliminacion, limpieza y datos corruptos |
-| `auth.guard.spec.ts` | 4 | Proteccion de rutas y redirecciones por rol |
-| `producto-list.component.spec.ts` | 12 | Carga, error, paginacion, ordenamiento, carrito, agotado, eliminacion confirmada/cancelada, historial y acciones solo para ADMIN |
+| `auth.guard.spec.ts` | 6 | Proteccion de rutas y redirecciones por rol, incluido `vendedorGuard` |
+| `producto-list.component.spec.ts` | 13 | Carga, error, paginacion, carrito, historial y acciones para ADMIN o VENDEDOR |
+| `perfil.component.spec.ts` | 5 | Carga, guardado de preferencias, validacion y cambio de contrasena |
+| `admin-usuarios.component.spec.ts` | 4 | Carga, alta de usuarios, edicion de roles y eliminacion |
+| `vendedor-productos.component.spec.ts` | 2 | Listado propio y eliminacion confirmada |
+| `vendedor-ventas.component.spec.ts` | 2 | Resumen de ventas y errores |
 | `producto-form.component.spec.ts` | 4 | Validacion, creacion, notificaciones, edicion y actualizacion |
 | `cart.service.spec.ts` | 7 | Persistencia, limites de stock, quitar, vaciar y checkout |
 | `carrito.component.spec.ts` | 6 | Listado, cantidades, eliminacion, compra notificada, vaciado confirmado/cancelado |
 | `mis-compras.component.spec.ts` | 6 | Historial, estado vacio, errores y devoluciones |
-| `login.component.spec.ts` | 6 | Validacion, login, `returnUrl`, error, credenciales demo y visibilidad de contrasena |
+| `login.component.spec.ts` | 7 | Validacion, login, `returnUrl`, error, credenciales demo, acceso rapido del vendedor y visibilidad de contrasena |
 | `registro.component.spec.ts` | 5 | Validacion, contrasenas distintas, registro, usuario duplicado y visibilidad de contrasenas |
-| `app.spec.ts` | 4 | Shell, navegacion, sesion visible, badge del carrito y logout |
+| `app.spec.ts` | 5 | Shell, navegacion por rol, perfil, badge del carrito y logout |
 
 ### Paso a paso para el frontend
 
@@ -613,7 +708,8 @@ Resultados de la ultima ejecucion local (`2026-11-18`):
 4. Verifica el resultado. Debe aparecer un resumen similar a:
 
    ```text
-    Tests run: 131, Failures: 0, Errors: 0, Skipped: 0
+     Tests run: 175, Failures: 0, Errors: 0, Skipped: 0
+
    BUILD SUCCESS
    ```
 
@@ -676,8 +772,8 @@ No necesitas MySQL: el perfil `test` (`src/test/resources/application-test.yaml`
 El workflow `.github/workflows/ci.yml` se ejecuta en cada `push` y `pull request`, con permisos de solo lectura, cancelacion de ejecuciones anticipadas y tiempos limite por job:
 
 1. Descarga el codigo del repositorio.
-2. **Job `pruebas`**: configura Java 21 (Temurin) con cache de Maven, ejecuta `mvn -B clean verify` con las 131 pruebas y valida la cobertura, y publica `target/site/jacoco` como artefacto descargable.
-3. **Job `frontend`**: configura Node 24 con cache de npm, ejecuta `npm ci`, `npm run format:check`, `npm run test:ci` con las 99 pruebas de Vitest y compila con `npm run build`.
+2. **Job `pruebas`**: configura Java 21 (Temurin) con cache de Maven, ejecuta `mvn -B clean verify` con las 175 pruebas y valida la cobertura, y publica `target/site/jacoco` como artefacto descargable.
+3. **Job `frontend`**: configura Node 24 con cache de npm, ejecuta `npm ci`, `npm run format:check`, `npm run test:ci` con las 127 pruebas de Vitest y compila con `npm run build`.
 4. **Job `compose`**: valida la sintaxis de `docker-compose.yml` con `docker compose config --quiet`.
 5. `.github/dependabot.yml` propone actualizaciones semanales de Maven, npm y GitHub Actions.
 
@@ -701,6 +797,7 @@ JaCoCo genera el reporte en `target/site/jacoco/index.html` y falla la construcc
 1. Importa `postman/Pruebas-Productos.postman_collection.json`.
 2. Verifica la variable `baseUrl` (por defecto `http://localhost:8080`).
 3. Ejecuta la coleccion en orden. El primer request inicia sesion como `admin` y guarda `accessToken` y `refreshToken`; el resto usa el bearer token automaticamente.
-4. Luego crea un producto, lo consulta, lo actualiza, lo elimina y valida los casos de error.
+4. La primera parte crea un producto, lo consulta, lo actualiza, lo elimina y valida los casos de error.
+5. La segunda parte inicia sesion como `vendedor`, consulta el perfil y el panel admin, crea un usuario temporal, verifica la propiedad de los productos y consulta el resumen de ventas.
 
-La coleccion guarda automaticamente el id del producto creado en la variable `productoId` e incluye pruebas de paginacion y busqueda. Si cambias el usuario seed, ajusta el cuerpo del request `Login admin`.
+La coleccion guarda automaticamente los ids en `productoId`, `usuarioCreadoId`, `productoVendedorId` y `productoAdminId`, y el token del vendedor en `vendedorToken`. Incluye pruebas de paginacion, busqueda y del error `403` al editar un producto ajeno. Si cambias los usuarios seed, ajusta los cuerpos de `Login admin` y `Login vendedor`.

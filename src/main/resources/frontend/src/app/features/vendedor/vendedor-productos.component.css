@@ -1,0 +1,24 @@
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.resumen {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  padding: 0.7rem 1rem;
+}
+
+.resumen strong {
+  color: var(--color-primary);
+  font-size: 1.4rem;
+}
+
+.block {
+  display: block;
+}

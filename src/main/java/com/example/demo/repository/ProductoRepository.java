@@ -13,6 +13,8 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
     Page<Producto> findByNombreContainingIgnoreCase(String nombre, Pageable pageable);
 
+    Page<Producto> findByVendedorUsername(String username, Pageable pageable);
+
     @Query(value = "select * from productos where id = :id for update", nativeQuery = true)
     Optional<Producto> findByIdForUpdate(@Param("id") Long id);
 }

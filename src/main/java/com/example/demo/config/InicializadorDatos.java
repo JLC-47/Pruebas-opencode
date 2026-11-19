@@ -42,10 +42,17 @@ public class InicializadorDatos implements ApplicationRunner {
     @Value("${app.seed.user.password:user123}")
     private String userPassword;
 
+    @Value("${app.seed.vendedor.username:vendedor}")
+    private String vendedorUsername;
+
+    @Value("${app.seed.vendedor.password:vendedor123}")
+    private String vendedorPassword;
+
     @Override
     public void run(ApplicationArguments args) {
         crearUsuarioSiNoExiste(adminUsername, adminPassword, Rol.ADMIN);
         crearUsuarioSiNoExiste(userUsername, userPassword, Rol.USER);
+        crearUsuarioSiNoExiste(vendedorUsername, vendedorPassword, Rol.VENDEDOR);
         crearProductosSiNoExisten();
     }
 
@@ -93,9 +100,15 @@ public class InicializadorDatos implements ApplicationRunner {
                         "Bandejas modulares para mantener cables, notas y accesorios en orden.")
         );
 
-        productos.forEach(producto ->
-                producto.setImagenUrl(
-                        "/img/productos/" + producto.getCategoria().toLowerCase(Locale.ROOT) + ".svg"));
+        Usuario vendedor = usuarioRepository.findByUsername(vendedorUsername).orElse(null);
+        for (int i = 0; i < productos.size(); i++) {
+            Producto producto = productos.get(i);
+            producto.setImagenUrl(
+                    "/img/productos/" + producto.getCategoria().toLowerCase(Locale.ROOT) + ".svg");
+            if (vendedor != null && i < 4) {
+                producto.setVendedor(vendedor);
+            }
+        }
 
         productoRepository.saveAll(productos);
         log.info("Catalogo inicial de productos creado");

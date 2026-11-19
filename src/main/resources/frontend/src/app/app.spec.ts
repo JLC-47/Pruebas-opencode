@@ -10,6 +10,8 @@ describe('App', () => {
     autenticado: signal(true),
     usuario: signal({ id: 1, username: 'admin', roles: ['ADMIN'] }),
     roles: signal(['ADMIN']),
+    esAdmin: signal(true),
+    esVendedor: signal(false),
     cerrarSesion: vi.fn(),
   };
 
@@ -20,6 +22,8 @@ describe('App', () => {
 
   beforeEach(async () => {
     authMock.autenticado.set(true);
+    authMock.esAdmin.set(true);
+    authMock.esVendedor.set(false);
     authMock.cerrarSesion.mockReset();
     cartMock.cantidadTotal.set(2);
     cartMock.limpiar.mockReset();
@@ -47,7 +51,9 @@ describe('App', () => {
 
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('.brand')?.textContent).toContain('Productos API');
-    expect(compiled.querySelectorAll('.app-nav a').length).toBe(4);
+    expect(compiled.querySelectorAll('.app-nav a').length).toBe(7);
+    expect(compiled.querySelector('.app-nav')?.textContent).toContain('Panel admin');
+    expect(compiled.querySelector('.app-nav')?.textContent).toContain('Mi perfil');
     expect(compiled.querySelector('.cart-count')?.textContent).toContain('2');
     expect(compiled.querySelector('.session')?.textContent).toContain('admin');
     expect(compiled.querySelector('.session')?.textContent).toContain('ADMIN');
@@ -67,6 +73,18 @@ describe('App', () => {
     expect(authMock.cerrarSesion).toHaveBeenCalled();
     expect(cartMock.limpiar).toHaveBeenCalled();
     expect(navegar).toHaveBeenCalledWith(['/login']);
+  });
+
+  it('muestra el panel de vendedor solo para vendedores', () => {
+    authMock.esAdmin.set(false);
+    authMock.esVendedor.set(true);
+
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const nav = (fixture.nativeElement as HTMLElement).querySelector('.app-nav')?.textContent ?? '';
+    expect(nav).toContain('Panel vendedor');
+    expect(nav).not.toContain('Panel admin');
   });
 
   it('muestra el enlace de login cuando no hay sesion', () => {

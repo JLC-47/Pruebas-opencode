@@ -1,6 +1,6 @@
 -- Esquema de productos-api para MySQL 8.
 -- Las tablas se crean una sola vez; los datos de demostracion los carga
--- InicializadorDatos cuando app.seed.enabled=true (perfiles dev/test).
+-- InicializadorDatos cuando app.seed.enabled=true (activo por defecto salvo en prod).
 
 CREATE DATABASE IF NOT EXISTS pruebas_db
   CHARACTER SET utf8mb4
@@ -16,8 +16,10 @@ CREATE TABLE IF NOT EXISTS productos (
   categoria   VARCHAR(60)    NULL,
   descripcion VARCHAR(300)   NULL,
   imagen_url  VARCHAR(500)   NULL,
+  vendedor_id BIGINT         NULL,
   PRIMARY KEY (id),
   KEY idx_productos_nombre (nombre),
+  KEY idx_productos_vendedor (vendedor_id),
   CONSTRAINT chk_productos_precio CHECK (precio >= 0),
   CONSTRAINT chk_productos_stock CHECK (stock >= 0)
 ) ENGINE = InnoDB;
@@ -28,10 +30,35 @@ CREATE TABLE IF NOT EXISTS usuarios (
   password VARCHAR(100) NOT NULL,
   rol      VARCHAR(20) NOT NULL,
   enabled  BOOLEAN     NOT NULL DEFAULT TRUE,
+  nombre   VARCHAR(80) NULL,
+  bio      VARCHAR(300) NULL,
+  avatar_url VARCHAR(500) NULL,
+  tema     VARCHAR(20) NULL DEFAULT 'claro',
+  idioma   VARCHAR(10) NULL DEFAULT 'es',
+  notificaciones_activas BOOLEAN NOT NULL DEFAULT TRUE,
   PRIMARY KEY (id),
   UNIQUE KEY uk_usuarios_username (username),
-  CONSTRAINT chk_usuarios_rol CHECK (rol IN ('ADMIN', 'USER'))
+  CONSTRAINT chk_usuarios_rol CHECK (rol IN ('ADMIN', 'VENDEDOR', 'USER'))
 ) ENGINE = InnoDB;
+
+ALTER TABLE productos
+  ADD CONSTRAINT fk_productos_vendedor FOREIGN KEY (vendedor_id) REFERENCES usuarios (id);
+
+-- Migracion para una base de datos ya creada con el esquema anterior:
+-- ALTER TABLE usuarios
+--   ADD COLUMN nombre VARCHAR(80) NULL,
+--   ADD COLUMN bio VARCHAR(300) NULL,
+--   ADD COLUMN avatar_url VARCHAR(500) NULL,
+--   ADD COLUMN tema VARCHAR(20) NULL DEFAULT 'claro',
+--   ADD COLUMN idioma VARCHAR(10) NULL DEFAULT 'es',
+--   ADD COLUMN notificaciones_activas BOOLEAN NOT NULL DEFAULT TRUE;
+-- ALTER TABLE usuarios DROP CHECK chk_usuarios_rol;
+-- ALTER TABLE usuarios
+--   ADD CONSTRAINT chk_usuarios_rol CHECK (rol IN ('ADMIN', 'VENDEDOR', 'USER'));
+-- ALTER TABLE productos
+--   ADD COLUMN vendedor_id BIGINT NULL,
+--   ADD KEY idx_productos_vendedor (vendedor_id),
+--   ADD CONSTRAINT fk_productos_vendedor FOREIGN KEY (vendedor_id) REFERENCES usuarios (id);
 
 CREATE TABLE IF NOT EXISTS refresh_tokens (
   id         BIGINT      NOT NULL AUTO_INCREMENT,

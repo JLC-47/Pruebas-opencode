@@ -40,13 +40,16 @@ app:
     audience: ${JWT_AUDIENCE:productos-web}
     clock-skew-seconds: ${JWT_CLOCK_SKEW_SECONDS:30}
   seed:
-    enabled: ${APP_SEED_ENABLED:false}
+    enabled: ${APP_SEED_ENABLED:true}
     admin:
       username: ${APP_SEED_ADMIN_USERNAME:admin}
       password: ${APP_SEED_ADMIN_PASSWORD:admin123}
     user:
       username: ${APP_SEED_USER_USERNAME:user}
       password: ${APP_SEED_USER_PASSWORD:user123}
+    vendedor:
+      username: ${APP_SEED_VENDEDOR_USERNAME:vendedor}
+      password: ${APP_SEED_VENDEDOR_PASSWORD:vendedor123}
 
 info:
   app:

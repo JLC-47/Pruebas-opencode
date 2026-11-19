@@ -1,0 +1,73 @@
+.perfil-layout {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.perfil-resumen {
+  display: grid;
+  justify-items: center;
+  gap: 0.55rem;
+  text-align: center;
+}
+
+.avatar-grande {
+  width: 6.5rem;
+  height: 6.5rem;
+  border: 3px solid var(--color-border);
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatar-inicial {
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #38bdf8, #2563eb);
+  color: #ffffff;
+  font-size: 2.4rem;
+  font-weight: 800;
+}
+
+.roles {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.rol {
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #075985;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 0.2rem 0.6rem;
+}
+
+.bio {
+  color: var(--color-text);
+  font-size: 0.92rem;
+  max-width: 28rem;
+}
+
+.small {
+  font-size: 0.8rem;
+}
+
+.textarea {
+  min-height: 5rem;
+  resize: vertical;
+}
+
+.checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-weight: 600;
+}
+
+@media (min-width: 860px) {
+  .perfil-layout {
+    grid-template-columns: 18rem minmax(0, 1fr);
+    align-items: start;
+  }
+}

@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Productos API - Pruebas",
-    "description": "Coleccion de pruebas funcionales para la API REST de productos. Ejecuta los requests en orden: inicia sesion como admin, crea un producto, lo consulta, lo actualiza, lo elimina y valida los casos de error.",
+    "description": "Coleccion de pruebas funcionales para la API REST de productos. Ejecuta los requests en orden: inicia sesion como admin, valida CRUD y errores, consulta el perfil, gestiona usuarios/roles y comprueba el flujo del vendedor con sus productos y ventas.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -29,6 +29,22 @@
     },
     {
       "key": "refreshToken",
+      "value": ""
+    },
+    {
+      "key": "vendedorToken",
+      "value": ""
+    },
+    {
+      "key": "usuarioCreadoId",
+      "value": ""
+    },
+    {
+      "key": "productoVendedorId",
+      "value": ""
+    },
+    {
+      "key": "productoAdminId",
       "value": ""
     }
   ],
@@ -417,6 +433,408 @@
           "raw": "{\n  \"nombre\": \"Producto inexistente\",\n  \"precio\": 100.00,\n  \"stock\": 1\n}"
         },
         "url": "{{baseUrl}}/api/productos/999999"
+      }
+    },
+    {
+      "name": "Login vendedor",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "const json = pm.response.json();",
+              "pm.test('Rol vendedor', () => pm.expect(json.usuario.roles).to.include('VENDEDOR'));",
+              "pm.collectionVariables.set('vendedorToken', json.accessToken);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"vendedor\",\n  \"password\": \"vendedor123\"\n}"
+        },
+        "url": "{{baseUrl}}/api/auth/login"
+      }
+    },
+    {
+      "name": "Ver mi perfil",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "const json = pm.response.json();",
+              "pm.test('Username admin', () => pm.expect(json.username).to.eql('admin'));",
+              "pm.test('Tiene preferencias', () => pm.expect(json).to.have.property('tema'));",
+              "pm.test('Tiene roles', () => pm.expect(json.roles).to.include('ADMIN'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/perfil"
+      }
+    },
+    {
+      "name": "Actualizar mi perfil",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('Tema oscuro', () => pm.expect(pm.response.json().tema).to.eql('oscuro'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Administrador API\",\n  \"bio\": \"Gestiona el catalogo\",\n  \"avatarUrl\": \"\",\n  \"tema\": \"oscuro\",\n  \"idioma\": \"es\",\n  \"notificacionesActivas\": true\n}"
+        },
+        "url": "{{baseUrl}}/api/perfil"
+      }
+    },
+    {
+      "name": "Listar roles disponibles",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('Incluye VENDEDOR', () => {",
+              "  const roles = pm.response.json().map(rol => rol.nombre);",
+              "  pm.expect(roles).to.include('VENDEDOR');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/admin/roles"
+      }
+    },
+    {
+      "name": "Crear usuario vendedor desde admin",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 201', () => pm.response.to.have.status(201));",
+              "const json = pm.response.json();",
+              "pm.test('Rol vendedor', () => pm.expect(json.rol).to.eql('VENDEDOR'));",
+              "pm.collectionVariables.set('usuarioCreadoId', json.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"vendedor_postman\",\n  \"password\": \"claveSegura123\",\n  \"rol\": \"VENDEDOR\",\n  \"enabled\": true\n}"
+        },
+        "url": "{{baseUrl}}/api/admin/usuarios"
+      }
+    },
+    {
+      "name": "Cambiar rol del usuario creado",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('Rol USER', () => pm.expect(pm.response.json().rol).to.eql('USER'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"rol\": \"USER\"\n}"
+        },
+        "url": "{{baseUrl}}/api/admin/usuarios/{{usuarioCreadoId}}/rol"
+      }
+    },
+    {
+      "name": "Eliminar usuario creado",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 204', () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/admin/usuarios/{{usuarioCreadoId}}"
+      }
+    },
+    {
+      "name": "Mis productos del vendedor",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('Es una pagina', () => pm.expect(pm.response.json().content).to.be.an('array'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{vendedorToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "url": "{{baseUrl}}/api/productos/mis-productos"
+      }
+    },
+    {
+      "name": "Crear producto como vendedor",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 201', () => pm.response.to.have.status(201));",
+              "const json = pm.response.json();",
+              "pm.collectionVariables.set('productoVendedorId', json.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{vendedorToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Producto del vendedor\",\n  \"precio\": 25000.00,\n  \"stock\": 5,\n  \"categoria\": \"Tecnologia\"\n}"
+        },
+        "url": "{{baseUrl}}/api/productos"
+      }
+    },
+    {
+      "name": "Ventas del vendedor",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "const json = pm.response.json();",
+              "pm.test('Incluye totales', () => {",
+              "  pm.expect(json).to.have.property('totalVendido');",
+              "  pm.expect(json).to.have.property('pedidos');",
+              "  pm.expect(json.ventas).to.be.an('array');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{vendedorToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "url": "{{baseUrl}}/api/vendedores/ventas"
+      }
+    },
+    {
+      "name": "Crear producto admin para prueba de propiedad",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 201', () => pm.response.to.have.status(201));",
+              "pm.collectionVariables.set('productoAdminId', pm.response.json().id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Producto administrado\",\n  \"precio\": 100.00,\n  \"stock\": 1\n}"
+        },
+        "url": "{{baseUrl}}/api/productos"
+      }
+    },
+    {
+      "name": "Vendedor no puede editar producto ajeno (403)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 403', () => pm.response.to.have.status(403));",
+              "pm.test('Acceso denegado', () => pm.expect(pm.response.json().title).to.eql('Acceso denegado'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{vendedorToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Intento ajeno\",\n  \"precio\": 1.00,\n  \"stock\": 1\n}"
+        },
+        "url": "{{baseUrl}}/api/productos/{{productoAdminId}}"
+      }
+    },
+    {
+      "name": "Limpiar producto del vendedor",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 204', () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{vendedorToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/productos/{{productoVendedorId}}"
+      }
+    },
+    {
+      "name": "Limpiar producto admin",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 204', () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/productos/{{productoAdminId}}"
       }
     }
   ]

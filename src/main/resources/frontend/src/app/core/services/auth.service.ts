@@ -26,6 +26,7 @@ export class AuthService {
   );
   readonly autenticado = computed(() => this.sesion() !== null);
   readonly esAdmin = computed(() => this.roles().includes('ADMIN'));
+  readonly esVendedor = computed(() => this.roles().includes('VENDEDOR'));
   readonly accessToken = computed(() => this.sesion()?.accessToken ?? null);
   readonly refreshToken = computed(() => this.sesion()?.refreshToken ?? null);
 
@@ -82,6 +83,19 @@ export class AuthService {
       this.http
         .post<void>('/api/auth/logout', { refreshToken })
         .subscribe({ error: () => undefined });
+    }
+  }
+
+  actualizarUsuario(usuario: UsuarioSesion): void {
+    const sesionActual = this.sesion();
+    if (!sesionActual) {
+      return;
+    }
+
+    const sesion: Sesion = { ...sesionActual, usuario };
+    this.sesion.set(sesion);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(sesion));
     }
   }
 

@@ -1,0 +1,21 @@
+.tarjetas {
+  display: grid;
+  gap: 1rem;
+}
+
+.tarjeta {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.tarjeta strong {
+  color: var(--color-primary);
+  font-size: 1.7rem;
+  letter-spacing: -0.02em;
+}
+
+@media (min-width: 640px) {
+  .tarjetas {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
